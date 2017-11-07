@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CUrdfDialog</class>
+ <widget class="QDialog" name="CUrdfDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>311</width>
+    <height>324</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>URDF Import</string>
+  </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
+  <widget class="QPushButton" name="qqImport">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>200</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqCenterModel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>110</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Center model above ground</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqAlternateMasks">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>150</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Alternate local respondable masks</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqConvexDecomposeDlg">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>70</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show convex decomposition dialog</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqConvexDecompose">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>50</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Convex decompose non-convex collision links</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqCreateVisualLinks">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>90</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Create visual links if none</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqCollisionLinksHidden">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Assign collision links to layer 9 </string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqModelDefinition">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>130</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Prepare model definition if feasable</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqJointsHidden">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Assign joints to layer 10</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="qqPositionCtrl">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>170</y>
+     <width>291</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enable position control for revolute and prismatic joints</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>240</y>
+     <width>291</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>If you experience a sudden crash during the import operation, make sure to enable 'Show convex decomposition dialog' and adjust the parameters there. Another option would be to simply disable 'Convex decompose non-convex collision links'.</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>qqCollisionLinksHidden</tabstop>
+  <tabstop>qqJointsHidden</tabstop>
+  <tabstop>qqConvexDecompose</tabstop>
+  <tabstop>qqConvexDecomposeDlg</tabstop>
+  <tabstop>qqCreateVisualLinks</tabstop>
+  <tabstop>qqCenterModel</tabstop>
+  <tabstop>qqModelDefinition</tabstop>
+  <tabstop>qqAlternateMasks</tabstop>
+  <tabstop>qqImport</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

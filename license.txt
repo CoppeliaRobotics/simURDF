@@ -1,0 +1,15 @@
+The URDF plugin is courtesy of Ignacio Tartavull and Martin Pecka.
+
+This repository also contains the 'tinyxml2' source files, which have
+their own licensing terms and copyrights. See the respective files for details.
+
+-----------------------------------------------------------------------
+THE FILES IN THIS REPOSITORY (THE 'FILES'), UNLESS OTHERWISE INDICATED,
+ARE DISTRIBUTED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED WARRANTY. THE
+USER WILL USE THEM AT HIS/HER OWN RISK. THE ORIGINAL AUTHORS AND
+COPPELIA ROBOTICS GMBH WILL NOT BE LIABLE FOR DATA LOSS, DAMAGES, LOSS
+OF PROFITS OR ANY OTHER KIND OF LOSS WHILE USING OR MISUSING THIS
+SOFTWARE.
+
+You are free to use/modify/distribute the 'files' for whatever purpose.
+-----------------------------------------------------------------------
