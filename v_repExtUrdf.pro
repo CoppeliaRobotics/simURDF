@@ -50,7 +50,7 @@ unix:!macx {
 SOURCES += \
     v_repExtUrdf.cpp \
     urdfdialog.cpp \
-    tinyxml2.cpp \
+    tinyxml2/tinyxml2.cpp \
     robot.cpp \
     link.cpp \
     joint.cpp \
@@ -71,7 +71,7 @@ SOURCES += \
 HEADERS +=\
     v_repExtUrdf.h \
     urdfdialog.h \
-    tinyxml2.h \
+    tinyxml2/tinyxml2.h \
     robot.h \
     link.h \
     joint.h \
