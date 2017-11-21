@@ -3,7 +3,7 @@
 #include "v_repLib.h"
 #include <iostream>
 #include <vector>
-#include "tinyxml2.h"
+#include "tinyxml2/tinyxml2.h"
 #include "link.h"
 #include "joint.h"
 #include "sensor.h"

@@ -1,7 +1,7 @@
 #include "urdfdialog.h"
 #include "ui_urdfdialog.h"
 #include "v_repLib.h"
-#include "tinyxml2.h"
+#include "tinyxml2/tinyxml2.h"
 #include <string>
 #include "robot.h"
 
