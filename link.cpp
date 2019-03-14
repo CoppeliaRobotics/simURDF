@@ -266,7 +266,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 printToConsole("Importing");
                 printToConsole(fname.c_str());
                 try {
-                    visual.n = simImportShape(visual.meshExtension,fname.c_str(),0,0.0001f,1.0f);
+                    visual.n = simImportShape(visual.meshExtension,fname.c_str(),16,0.0001f,1.0f);
                 } catch (std::exception& e) {
                     printToConsole(e.what());
                 } catch (...) {
@@ -315,7 +315,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 else
                     printToConsole(("ERROR: neither mesh file '"+collision.meshFilename+"' nor '"+collision.meshFilename_alt+"' do exist.").c_str());
             else
-                collision.n = simImportShape(collision.meshExtension,fname.c_str(),0,0.0001f,1.0);
+                collision.n = simImportShape(collision.meshExtension,fname.c_str(),16,0.0001f,1.0);
 
             if (collision.n == -1)
             {
