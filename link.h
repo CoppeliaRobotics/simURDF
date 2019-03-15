@@ -31,6 +31,7 @@ class urdfVisualOrCollision
         float sphere_size[3];           //If all the coordinates are zero do not create the object
         float cylinder_size[3];         //If all the coordinates are zero do not create the object
         float rgba[4];                  // a is ignored
+        bool hasColor;
         float mesh_scaling[3];
 
         std::string meshFilename;

@@ -10,6 +10,7 @@ urdfVisualOrCollision::urdfVisualOrCollision()
          sphere_size[0]= 0;     sphere_size[1]= 0;      sphere_size[2]= 0;
          cylinder_size[0]= 0;    cylinder_size[1]= 0;       cylinder_size[2]= 0;
          rgba[0]=0.4f;          rgba[1]=0.4f;           rgba[2]=0.4f;   rgba[3]=0.0f;
+         hasColor=false;
          mesh_scaling[0]=1.0f;
          mesh_scaling[1]=1.0f;
          mesh_scaling[2]=1.0f;
@@ -137,6 +138,7 @@ void urdfLink::setCylinder(std::string gazebo_radius,std::string gazebo_length,s
 void urdfLink::setColor(std::string color)
 {
     stringToArray(currentVisual().rgba,color);
+    currentVisual().hasColor=true;
 }
 
 void urdfLink::setMass(std::string gazebo_mass)
@@ -266,7 +268,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 printToConsole("Importing");
                 printToConsole(fname.c_str());
                 try {
-                    visual.n = simImportShape(visual.meshExtension,fname.c_str(),16,0.0001f,1.0f);
+                    visual.n = simImportShape(visual.meshExtension,fname.c_str(),16+128,0.0001f,1.0f);
                 } catch (std::exception& e) {
                     printToConsole(e.what());
                 } catch (...) {
@@ -315,7 +317,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 else
                     printToConsole(("ERROR: neither mesh file '"+collision.meshFilename+"' nor '"+collision.meshFilename_alt+"' do exist.").c_str());
             else
-                collision.n = simImportShape(collision.meshExtension,fname.c_str(),16,0.0001f,1.0);
+                collision.n = simImportShape(collision.meshExtension,fname.c_str(),16+128,0.0001f,1.0);
 
             if (collision.n == -1)
             {
@@ -384,15 +386,17 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     }
 
     // Grouping visuals
-    const float specularDiffuse[3]={0.3f,0.3f,0.3f};
+    const float specular[3]={0.2f,0.2f,0.2f};
     simInt *shapes = new simInt[visuals.size()];
     int validShapes = 0;
     for (unsigned int i=0; i<visuals.size(); i++) {
         urdfVisualOrCollision &visual = visuals[i];
         if (visual.n!=-1) {
-            simSetShapeColor(visual.n,NULL,0,visual.rgba);
-            simSetShapeColor(visual.n,NULL,1,specularDiffuse);
-            simSetShapeColor(visual.n,NULL,2,specularDiffuse);
+            if (visual.hasColor)
+            {
+                simSetShapeColor(visual.n,NULL,sim_colorcomponent_ambient_diffuse,visual.rgba);
+                simSetShapeColor(visual.n,NULL,sim_colorcomponent_specular,specular);
+            }
 
             C7Vector frame;
             frame.X.set(visual.xyz);

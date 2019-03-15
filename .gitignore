@@ -12,6 +12,7 @@ libv_repExtUrdf.so
 libv_repExtUrdf.so.1
 libv_repExtUrdf.so.1.0
 libv_repExtUrdf.so.1.0.0
+*.pro.user
 Makefile.Debug
 Makefile.Release
 object_script.*.Debug
