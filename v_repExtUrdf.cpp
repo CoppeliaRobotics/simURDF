@@ -185,16 +185,16 @@ VREP_DLLEXPORT simChar* v_repImportUrdf(const simChar* filenameOrUrdf, simBool h
 
 const int inArgs_IMPORT[]={
     10,
-    sim_script_arg_string, // filenameAndPath or URDF contents
-    sim_script_arg_bool, // assign collision links to layer 9
-    sim_script_arg_bool, // assign joints to layer 10
-    sim_script_arg_bool, // convex decompose
-    sim_script_arg_bool, // create visual links if none
-    sim_script_arg_bool, // show convex decomposition dialog
-    sim_script_arg_bool, // center model above ground
-    sim_script_arg_bool, // prepare model definition if feasible
-    sim_script_arg_bool, // alternate local respondable masks
-    sim_script_arg_bool  // enable position control for revolute and prismatic joints
+    sim_script_arg_string,0, // filenameAndPath or URDF contents
+    sim_script_arg_bool,0, // assign collision links to layer 9
+    sim_script_arg_bool,0, // assign joints to layer 10
+    sim_script_arg_bool,0, // convex decompose
+    sim_script_arg_bool,0, // create visual links if none
+    sim_script_arg_bool,0, // show convex decomposition dialog
+    sim_script_arg_bool,0, // center model above ground
+    sim_script_arg_bool,0, // prepare model definition if feasible
+    sim_script_arg_bool,0, // alternate local respondable masks
+    sim_script_arg_bool,0  // enable position control for revolute and prismatic joints
 };
 
 void v_repImportUrdfCallback(SScriptCallBack* p)
