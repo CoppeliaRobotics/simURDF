@@ -381,7 +381,7 @@ void robot::readLinks()
                         Link->setColor(visual_geometry_colorElement->Attribute("rgba"));
                 }
             }
-            visualElement = visualElement->NextSiblingElement();
+            visualElement = visualElement->NextSiblingElement("visual");
         }
         //COLLISION
         tinyxml2::XMLNode* collisionElement = linkElement->FirstChildElement("collision");
@@ -430,7 +430,7 @@ void robot::readLinks()
                 } 
 
             }
-            collisionElement = collisionElement->NextSiblingElement();
+            collisionElement = collisionElement->NextSiblingElement("collision");
         }
         
         vLinks.push_back(Link);
