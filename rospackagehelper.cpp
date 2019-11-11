@@ -1,6 +1,6 @@
 #include "rospackagehelper.h"
 
-#ifndef WIN_VREP
+#ifndef WIN_SIM
 #include <cstdio>
 #include <sstream>
 #include <stdexcept>

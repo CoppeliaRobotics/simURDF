@@ -17,5 +17,5 @@ bool isArrayEmpty(float arr[]);
 float* minus(float arr[]);
 std::string printMatrix(const float arr[]);
 void printToConsole(const char* txt);
-void setVrepObjectName(int objectHandle,const char* desiredName);
+void setSimObjectName(int objectHandle,const char* desiredName);
 C4Vector getQuaternionFromRpy(float rpy[3]);

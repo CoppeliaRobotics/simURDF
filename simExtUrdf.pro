@@ -1,12 +1,12 @@
 include(config.pri)
 
-TARGET = v_repExtUrdf
+TARGET = simExtUrdf
 TEMPLATE = lib
 
 DEFINES -= UNICODE
 CONFIG += shared
 INCLUDEPATH += "../include"
-INCLUDEPATH += "../v_repMath"
+INCLUDEPATH += "../simMath"
 greaterThan(QT_MAJOR_VERSION,4): QT += widgets
 
 *-msvc* {
@@ -36,19 +36,19 @@ greaterThan(QT_MAJOR_VERSION,4): QT += widgets
 INCLUDEPATH += $$BOOST_INCLUDEPATH
 
 win32 {
-    DEFINES += WIN_VREP
+    DEFINES += WIN_SIM
 }
 
 macx {
-    DEFINES += MAC_VREP
+    DEFINES += MAC_SIM
 }
 
 unix:!macx {
-    DEFINES += LIN_VREP
+    DEFINES += LIN_SIM
 }
 
 SOURCES += \
-    v_repExtUrdf.cpp \
+    simExtUrdf.cpp \
     urdfdialog.cpp \
     tinyxml2/tinyxml2.cpp \
     robot.cpp \
@@ -56,20 +56,20 @@ SOURCES += \
     joint.cpp \
     sensor.cpp \
     commonFunctions.cpp \
-    ../v_repMath/3Vector.cpp \
-    ../v_repMath/3X3Matrix.cpp \
-    ../v_repMath/4Vector.cpp \
-    ../v_repMath/4X4FullMatrix.cpp \
-    ../v_repMath/4X4Matrix.cpp \
-    ../v_repMath/7Vector.cpp \
-    ../v_repMath/MyMath.cpp \
-    ../common/v_repLib.cpp \
+    ../simMath/3Vector.cpp \
+    ../simMath/3X3Matrix.cpp \
+    ../simMath/4Vector.cpp \
+    ../simMath/4X4FullMatrix.cpp \
+    ../simMath/4X4Matrix.cpp \
+    ../simMath/7Vector.cpp \
+    ../simMath/MyMath.cpp \
+    ../common/simLib.cpp \
     ../common/scriptFunctionData.cpp \
     ../common/scriptFunctionDataItem.cpp \
     rospackagehelper.cpp
 
 HEADERS +=\
-    v_repExtUrdf.h \
+    simExtUrdf.h \
     urdfdialog.h \
     tinyxml2/tinyxml2.h \
     robot.h \
@@ -77,14 +77,14 @@ HEADERS +=\
     joint.h \
     sensor.h \
     commonFunctions.h \
-    ../v_repMath/3Vector.h \
-    ../v_repMath/3X3Matrix.h \
-    ../v_repMath/4Vector.h \
-    ../v_repMath/4X4FullMatrix.h \
-    ../v_repMath/4X4Matrix.h \
-    ../v_repMath/7Vector.h \
-    ../v_repMath/MyMath.h \
-    ../include/v_repLib.h \
+    ../simMath/3Vector.h \
+    ../simMath/3X3Matrix.h \
+    ../simMath/4Vector.h \
+    ../simMath/4X4FullMatrix.h \
+    ../simMath/4X4Matrix.h \
+    ../simMath/7Vector.h \
+    ../simMath/MyMath.h \
+    ../include/simLib.h \
     ../include/scriptFunctionData.h \
     ../include/scriptFunctionDataItem.h \
     rospackagehelper.h

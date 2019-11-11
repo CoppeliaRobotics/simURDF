@@ -1,14 +1,14 @@
 #ifndef ROSPACKAGEHELPER_H
 #define ROSPACKAGEHELPER_H
 
-#ifndef WIN_VREP
+#ifndef WIN_SIM
 #include <iostream>
 #include <map>
 
 /*!
  * \brief A helper class that resolves the root directory for a "package://"-schemed URLs in URDF mesh definitions.
  *
- * Internally, it uses the Bash "rospack find" command, so in order for this to work, you need to run V-REP from
+ * Internally, it uses the Bash "rospack find" command, so in order for this to work, you need to run CoppeliaSim from
  * a ROS-enabled command line.
  */
 class rosPackageHelper

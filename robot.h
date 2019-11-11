@@ -1,6 +1,6 @@
 #pragma once
 
-#include "v_repLib.h"
+#include "simLib.h"
 #include <iostream>
 #include <vector>
 #include "tinyxml2/tinyxml2.h"
@@ -20,8 +20,8 @@ private:
 
 public:
     //Data
-    tinyxml2::XMLDocument doc;
-    tinyxml2::XMLElement *robotElement;
+    simExtUrdf::tinyxml2::XMLDocument doc;
+    simExtUrdf::tinyxml2::XMLElement *robotElement;
 
     std::string packagePath;
     std::string name;

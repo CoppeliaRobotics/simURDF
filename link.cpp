@@ -170,7 +170,7 @@ void urdfLink::verifyInertia()
 void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose)
 {
     std::string meshFilename_alt; // we use an alternative filename... the package location is somewhat strangely defined sometimes!!
-#ifndef WIN_VREP
+#ifndef WIN_SIM
     if (meshFilename.compare(0,10,"package://")==0) // condition added by Marc on 17/1/2014
     {
         meshFilename = meshFilename.substr(10,meshFilename.size()); //to delete de package:// part
@@ -379,7 +379,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
     if (inertiaPresent && (collisions.size()==0))
     {
-        // we do not have a collision object. Let's create a dummy collision object, since inertias can't exist on their own in V-REP:
+        // we do not have a collision object. Let's create a dummy collision object, since inertias can't exist on their own in CoppeliaSim:
         float dummySize[3]={0.05f,0.05f,0.05f};
         addCollision();
         currentCollision().n = simCreatePureShape( 1,1+2+4, dummySize, mass, NULL); // we make it non-respondable!
@@ -483,7 +483,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     // Set the names, visibility, etc.:
     if (nLinkVisual!=-1)
     {
-        setVrepObjectName(nLinkVisual,std::string(name+"_visual").c_str());
+        setSimObjectName(nLinkVisual,std::string(name+"_visual").c_str());
         //const float specularDiffuse[3]={0.3f,0.3f,0.3f};
         if (nLinkCollision!=-1)
         { // if we have a collision object, we attach the visual object to it, then forget the visual object
@@ -508,14 +508,14 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     }
     if (nLinkCollision!=-1)
     {
-        setVrepObjectName(nLinkCollision,std::string(name+"_respondable").c_str());
+        setSimObjectName(nLinkCollision,std::string(name+"_respondable").c_str());
         if (hideCollisionLinks)
             simSetObjectIntParameter(nLinkCollision,10,256); // we "hide" that object in layer 9
     }
 }
 
 int urdfLink::scaleShapeIfRequired(int shapeHandle,float scalingFactors[3])
-{ // in future there will be a non-iso scaling function for objects in V-REP, but until then...
+{ // in future there will be a non-iso scaling function for objects in CoppeliaSim, but until then...
     if ( (scalingFactors[0]*scalingFactors[1]*scalingFactors[2]>0.99999f)&&(scalingFactors[0]>0.0f)&&(scalingFactors[1]>0.0f) )
         return(shapeHandle); // no scaling required!
     if (fabs(scalingFactors[0])<0.00001f)

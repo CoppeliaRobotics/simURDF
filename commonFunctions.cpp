@@ -2,7 +2,7 @@
 
 #include "commonFunctions.h"
 #include <string>
-#include "v_repLib.h"
+#include "simLib.h"
 
 void printToConsole(const char* txt)
 {
@@ -72,11 +72,11 @@ std::string printMatrix(const float arr[])
     return (" value0 = "+boost::lexical_cast<std::string>(arr[0])+" value1 = "+boost::lexical_cast<std::string>(arr[1])+ " value2 = "+boost::lexical_cast<std::string>(arr[2])).c_str();
 }
 
-void setVrepObjectName(int objectHandle,const char* desiredName)
+void setSimObjectName(int objectHandle,const char* desiredName)
 {
     std::string baseName(desiredName);
     for (int i=0;i<int(baseName.size());i++)
-    { // Objects in V-REP can only contain a-z, A-Z, 0-9, '_' or exaclty one '#' optionally followed by a number
+    { // Objects in CoppeliaSim can only contain a-z, A-Z, 0-9, '_' or exaclty one '#' optionally followed by a number
         char n=baseName[i];
         if ( ((n<'a')||(n>'z')) && ((n<'A')||(n>'Z')) && ((n<'0')||(n>'9')) )
             baseName[i]='_';
