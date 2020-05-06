@@ -4,12 +4,15 @@
 #include <string>
 #include "simLib.h"
 
-void printToConsole(const char* txt)
+void printToConsole(int verbosity,const char* txt)
 {
     static int handle=-1;
     std::string text(txt);
     text+="\n";
-    std::cout << text;
+    int plugin_verbosity = sim_verbosity_default;
+    simGetModuleInfo("URDF",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
+    if (plugin_verbosity>=verbosity)
+        std::cout << text;
     if (simAuxiliaryConsolePrint(handle,text.c_str())<=0)
     {
         handle=simAuxiliaryConsoleOpen("URDF import",5000,2+4,NULL,NULL,NULL,NULL);

@@ -5,7 +5,7 @@
 
 robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
 {
-    printToConsole("URDF import operation started.");
+    printToConsole(sim_verbosity_infos,"simExtURDF plugin info: import operation started.");
     if (filenameOrUrdf.compare(0, 5, "<?xml") == 0) {
         openString(filenameOrUrdf);
     } else {
@@ -20,7 +20,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     robotElement = doc.FirstChildElement("robot");
     if(robotElement==NULL)
     {
-        printToConsole("ERROR: there is no robot in the file.");
+        printToConsole(sim_verbosity_errors,"simExtURDF plugin error: there is no robot in the file.");
         return;
     }
 
@@ -163,7 +163,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     simRemoveObjectFromSelection(sim_handle_all,-1);
     for (int i=0;i<int(allObjects.size());i++)
         simAddObjectToSelection(sim_handle_single,allObjects[i]);
-    printToConsole("URDF import operation finished.\n\n");
+    printToConsole(sim_verbosity_infos,"simExtURDF plugin info: import operation finished.");
 }
 
 
@@ -183,7 +183,7 @@ void robot::openString(std::string urdf)
     if(doc.Parse(urdf.c_str())!=simExtUrdf::tinyxml2::XML_NO_ERROR)
     {
         //something went wrong
-        printToConsole("ERROR: The given string is not a valid URDF document.");
+        printToConsole(sim_verbosity_errors,"simExtURDF plugin error: the given string is not a valid URDF document.");
         return;
     }
 }
@@ -194,7 +194,7 @@ void robot::openFile(std::string filenameAndPath)
     if(doc.LoadFile((char*)filenameAndPath.c_str())!=simExtUrdf::tinyxml2::XML_NO_ERROR)
     {
         //something went wrong
-        printToConsole("ERROR: file couldn't be opened.");
+        printToConsole(sim_verbosity_errors,"simExtURDF plugin error: file couldn't be opened.");
         return;
     }
 #ifdef WIN_SIM
@@ -553,8 +553,8 @@ void robot::readSensors()
 
 void robot::createJoints(bool hideJoints,bool positionCtrl)
 {
-    std::string txt("There are "+boost::lexical_cast<std::string>(vJoints.size())+" joints.");
-    printToConsole(txt.c_str());
+    std::string txt("simExtURDF plugin info: there are "+boost::lexical_cast<std::string>(vJoints.size())+" joints.");
+    printToConsole(sim_verbosity_infos,txt.c_str());
 
     //Set parents and childs for all the links
     for(size_t i = 0; i < vJoints.size() ; i++)
@@ -701,8 +701,8 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
 
 void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg)
 {
-        std::string txt("There are "+boost::lexical_cast<std::string>(vLinks.size())+" links.");
-        printToConsole(txt.c_str());
+        std::string txt("simExtURDF plugin info: there are "+boost::lexical_cast<std::string>(vLinks.size())+" links.");
+        printToConsole(sim_verbosity_infos,txt.c_str());
         for(size_t i = 0; i < vLinks.size() ; i++)
         {
             urdfLink *Link = vLinks.at(i);
@@ -783,13 +783,13 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
 
 void robot::createSensors()
 {
-        std::string txt("There are "+boost::lexical_cast<std::string>(vSensors.size())+" sensors.");
-        printToConsole(txt.c_str());
+        std::string txt("simExtURDF plugin info: there are "+boost::lexical_cast<std::string>(vSensors.size())+" sensors.");
+        printToConsole(sim_verbosity_infos,txt.c_str());
         for(size_t i = 0; i < vSensors.size() ; i++)
         {
             sensor *Sensor = vSensors.at(i);
             if (Sensor->gazeboSpec)
-                printToConsole("ERROR: sensor will not be created: the URDF specification is supported, but this is a Gazebo tag which is not documented as it seems.");
+                printToConsole(sim_verbosity_errors,"simExtURDF plugin error: sensor will not be created: the URDF specification is supported, but this is a Gazebo tag which is not documented as it seems.");
             else
             {
                 if (Sensor->cameraSensorPresent)
@@ -865,8 +865,8 @@ int robot::getJointPosition(std::string jointName)
         if(vJoints.at(i)->name == jointName){return i;}
     
     }
-    std::string txt("ERROR: there is no joint with name '"+ jointName+"'");
-    printToConsole(txt.c_str());
+    std::string txt("simExtURDF plugin error: there is no joint with name '"+ jointName+"'");
+    printToConsole(sim_verbosity_errors,txt.c_str());
     return -1;
 }
 int robot::getLinkPosition(std::string linkName)
@@ -875,8 +875,8 @@ int robot::getLinkPosition(std::string linkName)
     {
         if(vLinks.at(i)->name == linkName){return i;}
     }
-    std::string txt("ERROR: there is no link with name '"+ linkName+"'");
-    printToConsole(txt.c_str());
+    std::string txt("simExtURDF plugin error: there is no link with name '"+ linkName+"'");
+    printToConsole(sim_verbosity_errors,txt.c_str());
     return -1;
 }
 

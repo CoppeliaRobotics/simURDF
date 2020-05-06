@@ -16,6 +16,6 @@ int getInt(const std::string& text);
 bool isArrayEmpty(float arr[]);
 float* minus(float arr[]);
 std::string printMatrix(const float arr[]);
-void printToConsole(const char* txt);
+void printToConsole(int verbosity,const char* txt);
 void setSimObjectName(int objectHandle,const char* desiredName);
 C4Vector getQuaternionFromRpy(float rpy[3]);

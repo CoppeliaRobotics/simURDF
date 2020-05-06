@@ -158,8 +158,8 @@ void urdfLink::verifyInertia()
         c+=fabs(inertia[i]);
     if (c==0.0f)
     {
-        std::string txt("ERROR: found an invalid inertia entry for link '"+ name+"'");
-        printToConsole(txt.c_str());
+        std::string txt("simExtURDF plugin error: found an invalid inertia entry for link '"+ name+"'");
+        printToConsole(sim_verbosity_errors,txt.c_str());
 
         inertia[0]=0.001f;
         inertia[4]=0.001f;
@@ -192,7 +192,7 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
         }
         else
         {
-            printToConsole("Could not decode package name from the mesh file specification.");
+            printToConsole(sim_verbosity_errors,"simExtURDF plugin warning: could not decode package name from the mesh file specification.");
         }
     }
 #else
@@ -216,8 +216,8 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
     else
     {
         nExtension = -1;
-        std::string txt("ERROR: the extension '"+ extension +"' is not currently a supported.");
-        printToConsole(txt.c_str());
+        std::string txt("simExtURDF plugin error: the extension '"+ extension +"' is not currently a supported.");
+        printToConsole(sim_verbosity_errors,txt.c_str());
     }
 
     if(choose == "visual")
@@ -239,8 +239,8 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
 //Write
 void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool& showConvexDecompositionDlg)
 {
-    std::string txt("Creating link '"+name+"'...");
-    printToConsole(txt.c_str());
+    std::string txt("simExtURDF plugin info: creating link '"+name+"'...");
+    printToConsole(sim_verbosity_infos,txt.c_str());
 
     // Visuals
     std::vector<urdfVisualOrCollision>::iterator it;
@@ -261,28 +261,27 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
             if (!exists)
                 if (!useAlt)
-                    printToConsole(("ERROR: mesh file '"+visual.meshFilename+"' does not exist.").c_str());
+                    printToConsole(sim_verbosity_errors,("simExtURDF plugin error: mesh file '"+visual.meshFilename+"' does not exist.").c_str());
                 else
-                    printToConsole(("ERROR: neither mesh file '"+visual.meshFilename+"' nor '"+visual.meshFilename_alt+"' do exist.").c_str());
+                    printToConsole(sim_verbosity_errors,("simExtURDF plugin error: neither mesh file '"+visual.meshFilename+"' nor '"+visual.meshFilename_alt+"' do exist.").c_str());
             else {
-                printToConsole("Importing");
-                printToConsole(fname.c_str());
+                printToConsole(sim_verbosity_infos,("simExtURDF plugin info: importing "+fname).c_str());
                 try {
                     visual.n = simImportShape(visual.meshExtension,fname.c_str(),16+128,0.0001f,1.0f);
                 } catch (std::exception& e) {
-                    printToConsole(e.what());
+                    printToConsole(sim_verbosity_errors,std::string("simExtURDF plugin error: "+std::string(e.what())).c_str());
                 } catch (...) {
-                    printToConsole("Exception caught while importing the mesh file.");
+                    printToConsole(sim_verbosity_errors,"simExtURDF plugin error: exception caught while importing the mesh file.");
                 }
             }
 
             if (!visual.n)
             {
                 if (!useAlt)
-                    txt="ERROR: failed to create the mesh '"+visual.meshFilename+"' with extension type "+boost::lexical_cast<std::string>(visual.meshExtension);
+                    txt="simExtURDF plugin error: failed to create the mesh '"+visual.meshFilename+"' with extension type "+boost::lexical_cast<std::string>(visual.meshExtension);
                 else
-                    txt="ERROR: failed to create the mesh '"+visual.meshFilename+"' or '"+visual.meshFilename_alt+"' with extension type "+boost::lexical_cast<std::string>(visual.meshExtension);
-                printToConsole(txt.c_str());
+                    txt="simExtURDF plugin error: failed to create the mesh '"+visual.meshFilename+"' or '"+visual.meshFilename_alt+"' with extension type "+boost::lexical_cast<std::string>(visual.meshExtension);
+                printToConsole(sim_verbosity_errors,txt.c_str());
             }
             else
                 visual.n = scaleShapeIfRequired(visual.n,visual.mesh_scaling);
@@ -313,19 +312,19 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
             if (!exists)
                 if (!useAlt)
-                    printToConsole(("ERROR: mesh file '"+collision.meshFilename+"' does not exist.").c_str());
+                    printToConsole(sim_verbosity_errors,("simExtURDF plugin error: mesh file '"+collision.meshFilename+"' does not exist.").c_str());
                 else
-                    printToConsole(("ERROR: neither mesh file '"+collision.meshFilename+"' nor '"+collision.meshFilename_alt+"' do exist.").c_str());
+                    printToConsole(sim_verbosity_errors,("simExtURDF plugin error: neither mesh file '"+collision.meshFilename+"' nor '"+collision.meshFilename_alt+"' do exist.").c_str());
             else
                 collision.n = simImportShape(collision.meshExtension,fname.c_str(),16+128,0.0001f,1.0);
 
             if (collision.n == -1)
             {
                 if (!useAlt)
-                    txt="ERROR: failed to create the mesh '"+collision.meshFilename+"' with extension type "+boost::lexical_cast<std::string>(collision.meshExtension);
+                    txt="simExtURDF plugin error: failed to create the mesh '"+collision.meshFilename+"' with extension type "+boost::lexical_cast<std::string>(collision.meshExtension);
                 else
-                    txt="ERROR: failed to create the mesh '"+collision.meshFilename+"' or '"+collision.meshFilename_alt+"' with extension type "+boost::lexical_cast<std::string>(collision.meshExtension);
-                printToConsole(txt.c_str());
+                    txt="simExtURDF plugin error: failed to create the mesh '"+collision.meshFilename+"' or '"+collision.meshFilename_alt+"' with extension type "+boost::lexical_cast<std::string>(collision.meshExtension);
+                printToConsole(sim_verbosity_errors,txt.c_str());
             }
             else
             {
@@ -475,8 +474,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     {
         if (collisions.size() > 0)
         {
-            std::string txt("ERROR: found a collision object without inertia data for link '"+ name+"'. Is that link meant to be static?");
-            printToConsole(txt.c_str());
+            std::string txt("simExtURDF plugin error: found a collision object without inertia data for link '"+ name+"'. Is that link meant to be static?");
+            printToConsole(sim_verbosity_errors,txt.c_str());
         }
     }
     

@@ -30,8 +30,21 @@
                             // 9: since CoppeliaSim 3.3.1 (Using stacks to exchange data with scripts)
                             // 10: since CoppeliaSim 3.4.1 (new API notation)
 
-LIBRARY simLib;
-CUrdfDialog* urdfDialog=NULL;
+static LIBRARY simLib;
+static CUrdfDialog* urdfDialog=NULL;
+
+bool canOutputMsg(int msgType)
+{
+    int plugin_verbosity = sim_verbosity_default;
+    simGetModuleInfo("URDF",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
+    return(plugin_verbosity>=msgType);
+}
+
+void outputMsg(int msgType,const char* msg)
+{
+    if (canOutputMsg(msgType))
+        printf("%s\n",msg);
+}
 
 // This is the plugin start routine (called just once, just after the plugin was loaded):
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
@@ -59,27 +72,14 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        std::cout << "Error, could not find or correctly load the CoppeliaSim library. Cannot start 'Urdf' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: could not find or correctly load the CoppeliaSim library. Cannot start 'Urdf' plugin.");
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        std::cout << "Error, could not find all required functions in the CoppeliaSim library. Cannot start 'Urdf' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: could not find all required functions in the CoppeliaSim library. Cannot start 'Urdf' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
-    }
-    // ******************************************
-
-    // Check the version of CoppeliaSim:
-    // ******************************************
-    int simVer,simRev;
-    simGetIntegerParameter(sim_intparam_program_version,&simVer);
-    simGetIntegerParameter(sim_intparam_program_revision,&simRev);
-    if( (simVer<30400) || ((simVer==30400)&&(simRev<9)) )
-    {
-        std::cout << "Sorry, your CoppeliaSim copy is somewhat old, CoppeliaSim 3.4.0 rev9 or higher is required. Cannot start 'Urdf' plugin.\n";
-        unloadSimLibrary(simLib);
-        return(0);
     }
     // ******************************************
 
@@ -87,7 +87,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     // ******************************************
     if (simGetBooleanParameter(sim_boolparam_headless)>0)
     {
-        std::cout << "CoppeliaSim runs in headless mode. Cannot start 'Urdf' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: CoppeliaSim runs in headless mode. Cannot start 'Urdf' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
