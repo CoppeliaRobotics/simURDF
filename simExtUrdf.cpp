@@ -72,12 +72,12 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: could not find or correctly load the CoppeliaSim library. Cannot start 'Urdf' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtURDF: error: could not find or correctly load the CoppeliaSim library. Cannot start 'Urdf' plugin.");
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: could not find all required functions in the CoppeliaSim library. Cannot start 'Urdf' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtURDF: error: could not find all required functions in the CoppeliaSim library. Cannot start 'Urdf' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
@@ -87,7 +87,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     // ******************************************
     if (simGetBooleanParameter(sim_boolparam_headless)>0)
     {
-        outputMsg(sim_verbosity_errors,"simExtIRDF plugin error: CoppeliaSim runs in headless mode. Cannot start 'Urdf' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtURDF: error: CoppeliaSim runs in headless mode. Cannot start 'Urdf' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
