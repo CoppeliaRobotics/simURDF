@@ -1,4 +1,5 @@
 #include "rospackagehelper.h"
+#include "simConst.h"
 
 #ifndef WIN_SIM
 #include <cstdio>
