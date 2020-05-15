@@ -33,19 +33,6 @@
 static LIBRARY simLib;
 static CUrdfDialog* urdfDialog=NULL;
 
-bool canOutputMsg(int msgType)
-{
-    int plugin_verbosity = sim_verbosity_default;
-    simGetModuleInfo("URDF",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
-    return(plugin_verbosity>=msgType);
-}
-
-void outputMsg(int msgType,const char* msg)
-{
-    if (canOutputMsg(msgType))
-        printf("%s\n",msg);
-}
-
 // This is the plugin start routine (called just once, just after the plugin was loaded):
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
@@ -72,12 +59,12 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        outputMsg(sim_verbosity_errors,"simExtURDF: error: could not find or correctly load the CoppeliaSim library. Cannot start 'Urdf' plugin.");
+        printf("simExtURDF: error: could not find or correctly load the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        outputMsg(sim_verbosity_errors,"simExtURDF: error: could not find all required functions in the CoppeliaSim library. Cannot start 'Urdf' plugin.");
+        printf("simExtURDF: error: could not find all required functions in the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
@@ -87,7 +74,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     // ******************************************
     if (simGetBooleanParameter(sim_boolparam_headless)>0)
     {
-        outputMsg(sim_verbosity_errors,"simExtURDF: error: CoppeliaSim runs in headless mode. Cannot start 'Urdf' plugin.");
+        simAddLog("URDF",sim_verbosity_errors,"CoppeliaSim runs in headless mode. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }

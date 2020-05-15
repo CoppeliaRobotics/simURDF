@@ -415,7 +415,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             shapes[validShapes++] = visual.n;
         }
     }
-    std::cout << std::flush;
+    //std::cout << std::flush;
     if (validShapes > 1) {
         nLinkVisual = simGroupShapes(shapes, validShapes);
     } else if (validShapes == 1) {
@@ -446,7 +446,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             shapes[validShapes++] = collision.n;
         }
     }
-    std::cout << std::flush;
+    //std::cout << std::flush;
     if (validShapes > 1) {
         nLinkCollision = simGroupShapes(shapes, validShapes);
     } else if (validShapes == 1) {
