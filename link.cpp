@@ -460,14 +460,22 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         inertiaFrame.X.set(inertial_xyz);
         inertiaFrame.Q=getQuaternionFromRpy(inertial_rpy);
 
-        C7Vector collisionFrame;
-        //collisionFrame.X.set(collision_xyz);
-        //collisionFrame.Q=getQuaternionFromRpy(collision_rpy);
-
-        //C4X4Matrix x((collisionFrame.getInverse()*inertiaFrame).getMatrix());
+#if SIM_PROGRAM_VERSION_NB_FULL<4010002
+        // simSetShapeMassAndInertia is deprecated
         C4X4Matrix x(inertiaFrame.getMatrix());
         float i[12]={x.M(0,0),x.M(0,1),x.M(0,2),x.X(0),x.M(1,0),x.M(1,1),x.M(1,2),x.X(1),x.M(2,0),x.M(2,1),x.M(2,2),x.X(2)};
         simSetShapeMassAndInertia(nLinkCollision,mass,inertia,C3Vector::zeroVector.data,i);
+#else
+        float _m[12];
+        simGetObjectMatrix(nLinkCollision,-1,_m); // nLinkCollision has not yet any parent/children
+        C4X4Matrix m;
+        m.copyFromInterface(_m);
+        C4X4Matrix x(m.getInverse()*inertiaFrame.getMatrix());
+        float i[12]={x.M(0,0),x.M(0,1),x.M(0,2),x.X(0),x.M(1,0),x.M(1,1),x.M(1,2),x.X(1),x.M(2,0),x.M(2,1),x.M(2,2),x.X(2)};
+        simSetShapeMass(nLinkCollision,mass);
+        simSetShapeInertia(nLinkCollision,inertia,i);
+#endif
+
         //std::cout << "Mass: " << mass << std::endl;
     }
     else
