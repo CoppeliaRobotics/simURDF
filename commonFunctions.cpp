@@ -12,7 +12,7 @@ void printToConsole(int verbosity,const char* txt)
     text+="\n";
     if (simAuxiliaryConsolePrint(handle,text.c_str())<=0)
     {
-        handle=simAuxiliaryConsoleOpen("URDF import",5000,2+4,NULL,NULL,NULL,NULL);
+        handle=simAuxiliaryConsoleOpen("URDF import",5000,2+4,nullptr,nullptr,nullptr,nullptr);
         simAuxiliaryConsolePrint(handle,text.c_str());
     }
 }

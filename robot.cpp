@@ -18,7 +18,7 @@ robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,
 void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
 {
     robotElement = doc.FirstChildElement("robot");
-    if(robotElement==NULL)
+    if(robotElement==nullptr)
     {
         printToConsole(sim_verbosity_errors,"simExtURDF: error: there is no robot in the file.");
         return;
@@ -93,7 +93,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
             int verticesSize;
             int* indices;
             int indicesSize;
-            if (simGetShapeMesh(allShapes[shNb],&vertices,&verticesSize,&indices,&indicesSize,NULL)!=-1)
+            if (simGetShapeMesh(allShapes[shNb],&vertices,&verticesSize,&indices,&indicesSize,nullptr)!=-1)
             {
                 C7Vector tr;
                 simGetObjectPosition(allShapes[shNb],-1,tr.X.data);
@@ -208,7 +208,7 @@ void robot::openFile(std::string filenameAndPath)
 
 void robot::readJoints()
 {
-    if (robotElement->FirstChildElement("joint") == NULL)
+    if (robotElement->FirstChildElement("joint") == nullptr)
         return;
     simExtUrdf::tinyxml2::XMLElement* jointElement;
     jointElement = robotElement->FirstChildElement("joint");
@@ -216,63 +216,63 @@ void robot::readJoints()
     while (jointElement)
     {
         joint* Joint=new joint();
-        if (jointElement->Attribute("type") != NULL)
+        if (jointElement->Attribute("type") != nullptr)
             Joint->setJointType(jointElement->Attribute("type"));
-        if (jointElement->Attribute("name") != NULL)
+        if (jointElement->Attribute("name") != nullptr)
             Joint->name = jointElement->Attribute("name");
 
         simExtUrdf::tinyxml2::XMLElement* joint_originElement = jointElement->FirstChildElement("origin");
-        if (joint_originElement!=NULL)
+        if (joint_originElement!=nullptr)
         {
-            if ( (joint_originElement->Attribute("xyz") != NULL) && (joint_originElement->Attribute("rpy") != NULL) )
+            if ( (joint_originElement->Attribute("xyz") != nullptr) && (joint_originElement->Attribute("rpy") != nullptr) )
                 Joint->setOrigin(joint_originElement->Attribute("xyz"),joint_originElement->Attribute("rpy"));
-            if ( (joint_originElement->Attribute("xyz") != NULL) && (joint_originElement->Attribute("rpy") == NULL) )
+            if ( (joint_originElement->Attribute("xyz") != nullptr) && (joint_originElement->Attribute("rpy") == nullptr) )
                 Joint->setOrigin(joint_originElement->Attribute("xyz"),"0 0 0");
-            if ( (joint_originElement->Attribute("xyz") == NULL) && (joint_originElement->Attribute("rpy") != NULL) )
+            if ( (joint_originElement->Attribute("xyz") == nullptr) && (joint_originElement->Attribute("rpy") != nullptr) )
                 Joint->setOrigin("0 0 0",joint_originElement->Attribute("rpy"));
         }
 
     
         simExtUrdf::tinyxml2::XMLElement* joint_axisElement = jointElement->FirstChildElement("axis");
-        if (joint_axisElement!=NULL)
+        if (joint_axisElement!=nullptr)
         {
-            if (joint_axisElement->Attribute("xyz") != NULL)
+            if (joint_axisElement->Attribute("xyz") != nullptr)
                 Joint->setAxis(joint_axisElement->Attribute("xyz"));
         }
                 
         simExtUrdf::tinyxml2::XMLElement* joint_parentElement = jointElement->FirstChildElement("parent");
-        if (joint_parentElement!=NULL)
+        if (joint_parentElement!=nullptr)
         {  
-            if (joint_parentElement->Attribute("link") != NULL)
+            if (joint_parentElement->Attribute("link") != nullptr)
                 Joint->setParent(joint_parentElement->Attribute("link"));
         }
 
         simExtUrdf::tinyxml2::XMLElement* joint_childElement = jointElement->FirstChildElement("child");
-        if (joint_childElement!=NULL)
+        if (joint_childElement!=nullptr)
         {
-            if (joint_childElement->Attribute("link") != NULL)
+            if (joint_childElement->Attribute("link") != nullptr)
                 Joint->setChild(joint_childElement->Attribute("link"));
         }
 
         simExtUrdf::tinyxml2::XMLElement* joint_limitElement = jointElement->FirstChildElement("limit");
-        if(joint_limitElement!=NULL)
+        if(joint_limitElement!=nullptr)
         {
-            if (joint_limitElement->Attribute("lower")!=NULL)
+            if (joint_limitElement->Attribute("lower")!=nullptr)
             {
                 Joint->lowerLimit=getFloat(joint_limitElement->Attribute("lower"));
                 Joint->jointLimitsSpecified=true;
             }
-            if (joint_limitElement->Attribute("upper")!=NULL)
+            if (joint_limitElement->Attribute("upper")!=nullptr)
             {
                 Joint->upperLimit=getFloat(joint_limitElement->Attribute("upper"));
                 Joint->jointLimitsSpecified=true;
             }
-            if (joint_limitElement->Attribute("effort")!=NULL)
+            if (joint_limitElement->Attribute("effort")!=nullptr)
             {
                 Joint->effortLimitAngular=getFloat(joint_limitElement->Attribute("effort"));
                 Joint->effortLimitLinear=getFloat(joint_limitElement->Attribute("effort"));
             }
-            if (joint_limitElement->Attribute("velocity")!=NULL)
+            if (joint_limitElement->Attribute("velocity")!=nullptr)
             {
                 Joint->velocityLimitAngular=getFloat(joint_limitElement->Attribute("velocity"));
                 Joint->velocityLimitLinear=getFloat(joint_limitElement->Attribute("velocity"));
@@ -294,90 +294,90 @@ void robot::readLinks()
         
         //INERTIAL
         simExtUrdf::tinyxml2::XMLElement* inertialElement = linkElement->FirstChildElement("inertial");
-        if(inertialElement!=NULL)
+        if(inertialElement!=nullptr)
         {
             Link->inertiaPresent=true;
             simExtUrdf::tinyxml2::XMLElement* inertial_originElement = inertialElement->FirstChildElement("origin");
-            if(inertial_originElement != NULL)
+            if(inertial_originElement != nullptr)
             {
-                if (inertial_originElement->Attribute("xyz")!= NULL)
+                if (inertial_originElement->Attribute("xyz")!= nullptr)
                     Link->setPosition(inertial_originElement->Attribute("xyz"),"inertial");
-                if (inertial_originElement->Attribute("rpy")!= NULL)
+                if (inertial_originElement->Attribute("rpy")!= nullptr)
                     Link->setRotation(inertial_originElement->Attribute("rpy"),"inertial");
             }
 
             simExtUrdf::tinyxml2::XMLElement* inertial_massElement = inertialElement->FirstChildElement("mass");
-            if(inertial_massElement!= NULL)
+            if(inertial_massElement!= nullptr)
             {
-                if (inertial_massElement->Attribute("value") != NULL)
+                if (inertial_massElement->Attribute("value") != nullptr)
                     Link->setMass(inertial_massElement->Attribute("value"));
             }
             
             simExtUrdf::tinyxml2::XMLElement* inertial_inertiaElement = inertialElement->FirstChildElement("inertia");
-            if(inertial_inertiaElement != NULL)
+            if(inertial_inertiaElement != nullptr)
             {
-                if (inertial_inertiaElement->Attribute("ixx") != NULL){ Link->setInertia(0,inertial_inertiaElement->Attribute("ixx")); }
-                if (inertial_inertiaElement->Attribute("ixy") != NULL){ Link->setInertia(1,inertial_inertiaElement->Attribute("ixy")); Link->setInertia(3,inertial_inertiaElement->Attribute("ixy"));}
-                if (inertial_inertiaElement->Attribute("ixz") != NULL){ Link->setInertia(2,inertial_inertiaElement->Attribute("ixz")); Link->setInertia(6,inertial_inertiaElement->Attribute("ixz")); }
-                if (inertial_inertiaElement->Attribute("iyy") != NULL){ Link->setInertia(4,inertial_inertiaElement->Attribute("iyy")); }
-                if (inertial_inertiaElement->Attribute("iyz") != NULL){ Link->setInertia(5,inertial_inertiaElement->Attribute("iyz")); Link->setInertia(7,inertial_inertiaElement->Attribute("iyz")); }
-                if (inertial_inertiaElement->Attribute("izz") != NULL){ Link->setInertia(8,inertial_inertiaElement->Attribute("izz")); }
+                if (inertial_inertiaElement->Attribute("ixx") != nullptr){ Link->setInertia(0,inertial_inertiaElement->Attribute("ixx")); }
+                if (inertial_inertiaElement->Attribute("ixy") != nullptr){ Link->setInertia(1,inertial_inertiaElement->Attribute("ixy")); Link->setInertia(3,inertial_inertiaElement->Attribute("ixy"));}
+                if (inertial_inertiaElement->Attribute("ixz") != nullptr){ Link->setInertia(2,inertial_inertiaElement->Attribute("ixz")); Link->setInertia(6,inertial_inertiaElement->Attribute("ixz")); }
+                if (inertial_inertiaElement->Attribute("iyy") != nullptr){ Link->setInertia(4,inertial_inertiaElement->Attribute("iyy")); }
+                if (inertial_inertiaElement->Attribute("iyz") != nullptr){ Link->setInertia(5,inertial_inertiaElement->Attribute("iyz")); Link->setInertia(7,inertial_inertiaElement->Attribute("iyz")); }
+                if (inertial_inertiaElement->Attribute("izz") != nullptr){ Link->setInertia(8,inertial_inertiaElement->Attribute("izz")); }
             }
             Link->verifyInertia(); // required because some of the URDF files have inertia matrices that are 0!!!
         }
 
         //VISUAL
         simExtUrdf::tinyxml2::XMLNode* visualElement = linkElement->FirstChildElement("visual");
-        while(visualElement != NULL)
+        while(visualElement != nullptr)
         {
             Link->addVisual();
 
             simExtUrdf::tinyxml2::XMLElement* visual_originElement = visualElement->FirstChildElement("origin");
-            if(visual_originElement != NULL)
+            if(visual_originElement != nullptr)
             {
-                if (visual_originElement->Attribute("xyz")!= NULL)
+                if (visual_originElement->Attribute("xyz")!= nullptr)
                     Link->setPosition(visual_originElement->Attribute("xyz"),"visual");
-                if (visual_originElement->Attribute("rpy")!= NULL)
+                if (visual_originElement->Attribute("rpy")!= nullptr)
                     Link->setRotation(visual_originElement->Attribute("rpy"),"visual");
             }
 
             simExtUrdf::tinyxml2::XMLElement* visual_geometryElement = visualElement->FirstChildElement("geometry");
-            if(visual_geometryElement!=NULL)
+            if(visual_geometryElement!=nullptr)
             {
 
                 simExtUrdf::tinyxml2::XMLElement* visual_geometry_meshElement = visual_geometryElement->FirstChildElement("mesh");
-                if(visual_geometry_meshElement!=NULL)
+                if(visual_geometry_meshElement!=nullptr)
                 {
-                    if (visual_geometry_meshElement->Attribute("filename") != NULL)
+                    if (visual_geometry_meshElement->Attribute("filename") != nullptr)
                         Link->setMeshFilename(packagePath,visual_geometry_meshElement->Attribute("filename"),"visual");
-                    if (visual_geometry_meshElement->Attribute("scale") != NULL)
+                    if (visual_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentVisual().mesh_scaling,visual_geometry_meshElement->Attribute("scale"));
                 }
                 simExtUrdf::tinyxml2::XMLElement* visual_geometry_boxElement = visual_geometryElement->FirstChildElement("box");
-                if(visual_geometry_boxElement!=NULL)
+                if(visual_geometry_boxElement!=nullptr)
                 {
-                    if(visual_geometry_boxElement->Attribute("size") != NULL){Link->setBox(visual_geometry_boxElement->Attribute("size"),"visual");}
+                    if(visual_geometry_boxElement->Attribute("size") != nullptr){Link->setBox(visual_geometry_boxElement->Attribute("size"),"visual");}
                 } 
                 simExtUrdf::tinyxml2::XMLElement* visual_geometry_sphereElement = visual_geometryElement->FirstChildElement("sphere");
-                if(visual_geometry_sphereElement!=NULL)
+                if(visual_geometry_sphereElement!=nullptr)
                 {
-                    if(visual_geometry_sphereElement->Attribute("radius") != NULL){Link->setSphere(visual_geometry_sphereElement->Attribute("radius"),"visual");}
+                    if(visual_geometry_sphereElement->Attribute("radius") != nullptr){Link->setSphere(visual_geometry_sphereElement->Attribute("radius"),"visual");}
                 } 
                 simExtUrdf::tinyxml2::XMLElement* visual_geometry_cylinderElement = visual_geometryElement->FirstChildElement("cylinder");
-                if(visual_geometry_cylinderElement!=NULL)
+                if(visual_geometry_cylinderElement!=nullptr)
                 {
-                    if( visual_geometry_cylinderElement->Attribute("radius") != NULL && visual_geometry_cylinderElement->Attribute("length") != NULL)
+                    if( visual_geometry_cylinderElement->Attribute("radius") != nullptr && visual_geometry_cylinderElement->Attribute("length") != nullptr)
                     {Link->setCylinder( visual_geometry_cylinderElement->Attribute("radius"),visual_geometry_cylinderElement->Attribute("length"),"visual");}
                 } 
 
             }
             simExtUrdf::tinyxml2::XMLElement* visual_materialElement = visualElement->FirstChildElement("material");
-            if(visual_materialElement!=NULL)
+            if(visual_materialElement!=nullptr)
             {
                 simExtUrdf::tinyxml2::XMLElement* visual_geometry_colorElement = visual_materialElement->FirstChildElement("color");
-                if(visual_geometry_colorElement!=NULL)
+                if(visual_geometry_colorElement!=nullptr)
                 {
-                    if (visual_geometry_colorElement->Attribute("rgba") != NULL)
+                    if (visual_geometry_colorElement->Attribute("rgba") != nullptr)
                         Link->setColor(visual_geometry_colorElement->Attribute("rgba"));
                 }
             }
@@ -385,47 +385,47 @@ void robot::readLinks()
         }
         //COLLISION
         simExtUrdf::tinyxml2::XMLNode* collisionElement = linkElement->FirstChildElement("collision");
-        while(collisionElement != NULL)
+        while(collisionElement != nullptr)
         {
             Link->addCollision();
 
             simExtUrdf::tinyxml2::XMLElement* collision_originElement = collisionElement->FirstChildElement("origin");
-            if(collision_originElement != NULL)
+            if(collision_originElement != nullptr)
             {
-                if (collision_originElement->Attribute("xyz")!= NULL)
+                if (collision_originElement->Attribute("xyz")!= nullptr)
                     Link->setPosition(collision_originElement->Attribute("xyz"),"collision");
-                if (collision_originElement->Attribute("rpy")!= NULL)
+                if (collision_originElement->Attribute("rpy")!= nullptr)
                     Link->setRotation(collision_originElement->Attribute("rpy"),"collision");
             }
 
             simExtUrdf::tinyxml2::XMLElement* collision_geometryElement = collisionElement->FirstChildElement("geometry");
-            if(collision_geometryElement!=NULL)
+            if(collision_geometryElement!=nullptr)
             {
 
                 simExtUrdf::tinyxml2::XMLElement* collision_geometry_meshElement = collision_geometryElement->FirstChildElement("mesh");
-                if(collision_geometry_meshElement!=NULL)
+                if(collision_geometry_meshElement!=nullptr)
                 {
-                    if (collision_geometry_meshElement->Attribute("filename") != NULL)
+                    if (collision_geometry_meshElement->Attribute("filename") != nullptr)
                         Link->setMeshFilename(packagePath,collision_geometry_meshElement->Attribute("filename"),"collision");
-                    if (collision_geometry_meshElement->Attribute("scale") != NULL)
+                    if (collision_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentCollision().mesh_scaling,collision_geometry_meshElement->Attribute("scale"));
                 }
                 simExtUrdf::tinyxml2::XMLElement* collision_geometry_boxElement = collision_geometryElement->FirstChildElement("box");
-                if(collision_geometry_boxElement!=NULL)
+                if(collision_geometry_boxElement!=nullptr)
                 {
-                    if(collision_geometry_boxElement->Attribute("size") != NULL)
+                    if(collision_geometry_boxElement->Attribute("size") != nullptr)
                     {Link->setBox(collision_geometry_boxElement->Attribute("size"),"collision");}
                 } 
                 simExtUrdf::tinyxml2::XMLElement* collision_geometry_sphereElement = collision_geometryElement->FirstChildElement("sphere");
-                if(collision_geometry_sphereElement!=NULL)
+                if(collision_geometry_sphereElement!=nullptr)
                 {
-                    if(collision_geometry_sphereElement->Attribute("radius") != NULL)
+                    if(collision_geometry_sphereElement->Attribute("radius") != nullptr)
                     {Link->setSphere(collision_geometry_sphereElement->Attribute("radius"),"collision");}
                 } 
                 simExtUrdf::tinyxml2::XMLElement* collision_geometry_cylinderElement = collision_geometryElement->FirstChildElement("cylinder");
-                if(collision_geometry_cylinderElement!=NULL)
+                if(collision_geometry_cylinderElement!=nullptr)
                 {
-                    if(collision_geometry_cylinderElement->Attribute("radius") != NULL && collision_geometry_cylinderElement->Attribute("length") != NULL)
+                    if(collision_geometry_cylinderElement->Attribute("radius") != nullptr && collision_geometry_cylinderElement->Attribute("length") != nullptr)
                     {Link->setCylinder( collision_geometry_cylinderElement->Attribute("radius"),collision_geometry_cylinderElement->Attribute("length"),"collision");}
                 } 
 
@@ -451,40 +451,40 @@ void robot::readSensors()
 
 
         simExtUrdf::tinyxml2::XMLElement* sensor_parentElement = sensorElement->FirstChildElement("parent");
-        if (sensor_parentElement!=NULL)
+        if (sensor_parentElement!=nullptr)
         {
-            if (sensor_parentElement->Attribute("link") != NULL)
+            if (sensor_parentElement->Attribute("link") != nullptr)
                 Sensor->parentLink=sensor_parentElement->Attribute("link");
         }
 
         simExtUrdf::tinyxml2::XMLElement* sensor_originElement = sensorElement->FirstChildElement("origin");
-        if(sensor_originElement != NULL)
+        if(sensor_originElement != nullptr)
         {
-            if (sensor_originElement->Attribute("xyz")!= NULL)
+            if (sensor_originElement->Attribute("xyz")!= nullptr)
                 stringToArray(Sensor->origin_xyz,sensor_originElement->Attribute("xyz"));
-            if (sensor_originElement->Attribute("rpy")!= NULL)
+            if (sensor_originElement->Attribute("rpy")!= nullptr)
                 stringToArray(Sensor->origin_rpy,sensor_originElement->Attribute("rpy"));
         }
 
         simExtUrdf::tinyxml2::XMLElement* sensor_cameraElement = sensorElement->FirstChildElement("camera");
-        Sensor->cameraSensorPresent=(sensor_cameraElement != NULL);
-        if(sensor_cameraElement != NULL)
+        Sensor->cameraSensorPresent=(sensor_cameraElement != nullptr);
+        if(sensor_cameraElement != nullptr)
         {
             simExtUrdf::tinyxml2::XMLElement* sensor_imageElement = sensor_cameraElement->FirstChildElement("image");
-            if(sensor_imageElement != NULL)
+            if(sensor_imageElement != nullptr)
             {
-                if (sensor_imageElement->Attribute("width")!= NULL)
+                if (sensor_imageElement->Attribute("width")!= nullptr)
                     Sensor->resolution[0]=getInt(sensor_imageElement->Attribute("width"));
-                if (sensor_imageElement->Attribute("height")!= NULL)
+                if (sensor_imageElement->Attribute("height")!= nullptr)
                     Sensor->resolution[1]=getInt(sensor_imageElement->Attribute("height"));
-                if (sensor_imageElement->Attribute("near")!= NULL)
+                if (sensor_imageElement->Attribute("near")!= nullptr)
                     Sensor->clippingPlanes[0]=getFloat(sensor_imageElement->Attribute("near"));
-                if (sensor_imageElement->Attribute("far")!= NULL)
+                if (sensor_imageElement->Attribute("far")!= nullptr)
                     Sensor->clippingPlanes[1]=getFloat(sensor_imageElement->Attribute("far"));
             }
         }
         simExtUrdf::tinyxml2::XMLElement* sensor_rayElement = sensorElement->FirstChildElement("ray");
-        Sensor->proximitySensorPresent=(sensor_rayElement != NULL);
+        Sensor->proximitySensorPresent=(sensor_rayElement != nullptr);
 
         vSensors.push_back(Sensor);
         sensorElement = sensorElement->NextSiblingElement("sensor"); //moves to the next sensor
@@ -508,40 +508,40 @@ void robot::readSensors()
 
 
             simExtUrdf::tinyxml2::XMLElement* sensor_parentElement = sensorElement->FirstChildElement("parent");
-            if (sensor_parentElement!=NULL)
+            if (sensor_parentElement!=nullptr)
             {
-                if (sensor_parentElement->Attribute("link") != NULL)
+                if (sensor_parentElement->Attribute("link") != nullptr)
                     Sensor->parentLink=sensor_parentElement->Attribute("link");
             }
 
             simExtUrdf::tinyxml2::XMLElement* sensor_originElement = sensorElement->FirstChildElement("origin");
-            if(sensor_originElement != NULL)
+            if(sensor_originElement != nullptr)
             {
-                if (sensor_originElement->Attribute("xyz")!= NULL)
+                if (sensor_originElement->Attribute("xyz")!= nullptr)
                     stringToArray(Sensor->origin_xyz,sensor_originElement->Attribute("xyz"));
-                if (sensor_originElement->Attribute("rpy")!= NULL)
+                if (sensor_originElement->Attribute("rpy")!= nullptr)
                     stringToArray(Sensor->origin_rpy,sensor_originElement->Attribute("rpy"));
             }
 
             simExtUrdf::tinyxml2::XMLElement* sensor_cameraElement = sensorElement->FirstChildElement("camera");
-            Sensor->cameraSensorPresent=(sensor_cameraElement != NULL);
-            if(sensor_cameraElement != NULL)
+            Sensor->cameraSensorPresent=(sensor_cameraElement != nullptr);
+            if(sensor_cameraElement != nullptr)
             {
                 simExtUrdf::tinyxml2::XMLElement* sensor_imageElement = sensor_cameraElement->FirstChildElement("image");
-                if(sensor_imageElement != NULL)
+                if(sensor_imageElement != nullptr)
                 {
-                    if (sensor_imageElement->Attribute("width")!= NULL)
+                    if (sensor_imageElement->Attribute("width")!= nullptr)
                         Sensor->resolution[0]=getInt(sensor_imageElement->Attribute("width"));
-                    if (sensor_imageElement->Attribute("height")!= NULL)
+                    if (sensor_imageElement->Attribute("height")!= nullptr)
                         Sensor->resolution[1]=getInt(sensor_imageElement->Attribute("height"));
-                    if (sensor_imageElement->Attribute("near")!= NULL)
+                    if (sensor_imageElement->Attribute("near")!= nullptr)
                         Sensor->clippingPlanes[0]=getFloat(sensor_imageElement->Attribute("near"));
-                    if (sensor_imageElement->Attribute("far")!= NULL)
+                    if (sensor_imageElement->Attribute("far")!= nullptr)
                         Sensor->clippingPlanes[1]=getFloat(sensor_imageElement->Attribute("far"));
                 }
             }
             simExtUrdf::tinyxml2::XMLElement* sensor_rayElement = sensorElement->FirstChildElement("ray");
-            Sensor->proximitySensorPresent=(sensor_rayElement != NULL);
+            Sensor->proximitySensorPresent=(sensor_rayElement != nullptr);
 
             vSensors.push_back(Sensor);
             sensorElement = sensorElement->NextSiblingElement("sensor"); //moves to the next sensor
@@ -579,20 +579,20 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
 
         //Create the joint/forceSensor/dummy:
         if (vJoints.at(i)->jointType==-1)
-            vJoints.at(i)->nJoint = simCreateDummy(0.02f,NULL); // when joint type was not recognized
+            vJoints.at(i)->nJoint = simCreateDummy(0.02f,nullptr); // when joint type was not recognized
         if (vJoints.at(i)->jointType==0)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,NULL,NULL,NULL);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==1)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_prismatic_subtype,sim_jointmode_force,2,NULL,NULL,NULL);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_prismatic_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==2)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_spherical_subtype,sim_jointmode_force,2,NULL,NULL,NULL);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_spherical_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==3)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,NULL,NULL,NULL);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==4)
         { // when joint type is "fixed"
             int intParams[5]={1,4,4,0,0};
             float floatParams[5]={0.02f,1.0f,1.0f,0.0f,0.0f};
-            vJoints.at(i)->nJoint = simCreateForceSensor(0,intParams,floatParams,NULL);
+            vJoints.at(i)->nJoint = simCreateForceSensor(0,intParams,floatParams,nullptr);
         }
 
         if ( (vJoints.at(i)->jointType==0)||(vJoints.at(i)->jointType==1)||(vJoints.at(i)->jointType==3) )
@@ -796,7 +796,7 @@ void robot::createSensors()
                 {
                     int intParams[4]={(int)Sensor->resolution[0],(int)Sensor->resolution[1],0,0};
                     float floatParams[11]={Sensor->clippingPlanes[0],Sensor->clippingPlanes[1],60.0f*piValue/180.0f,0.2f,0.2f,0.4f,0.0f,0.0f,0.0f,0.0f,0.0f};
-                    Sensor->nSensor=simCreateVisionSensor(1,intParams,floatParams,NULL);
+                    Sensor->nSensor=simCreateVisionSensor(1,intParams,floatParams,nullptr);
                     //Set the name:
                     setSimObjectName(Sensor->nSensor,std::string(name+"_camera").c_str());
                 }
@@ -805,7 +805,7 @@ void robot::createSensors()
                 { // Proximity sensors seem to be very very specific and not general / generic at all. How come?! I.e. a succession of ray description (with min/max distances) would do
                     int intParams[8]={16,16,1,4,16,1,0,0};
                     float floatParams[15]={0.0f,0.48f,0.1f,0.1f,0.1f,0.1f,0.0f,0.02f,0.02f,30.0f*piValue/180.0f,piValue/2.0f,0.0f,0.02f,0.0f,0.0f};
-                    proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,NULL);
+                    proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
                     //Set the name:
                     setSimObjectName(proxSensHandle,std::string(Sensor->name+"_proximity").c_str());
                 }

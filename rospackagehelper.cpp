@@ -61,7 +61,7 @@ std::string rosPackageHelper::exec(const char* command) {
     char buffer[128];
     std::string result = "";
     while(!std::feof(pipe)) {
-        if(std::fgets(buffer, 128, pipe) != NULL)
+        if(std::fgets(buffer, 128, pipe) != nullptr)
             result += buffer;
     }
 

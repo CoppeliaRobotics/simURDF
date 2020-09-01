@@ -287,11 +287,11 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 visual.n = scaleShapeIfRequired(visual.n,visual.mesh_scaling);
         }
         else if (!isArrayEmpty(visual.sphere_size))
-            visual.n = simCreatePureShape( 1,1+2+16, visual.sphere_size, mass, NULL);
+            visual.n = simCreatePureShape( 1,1+2+16, visual.sphere_size, mass, nullptr);
         else if (!isArrayEmpty(visual.cylinder_size))
-            visual.n = simCreatePureShape( 2,1+2+16, visual.cylinder_size, mass, NULL);
+            visual.n = simCreatePureShape( 2,1+2+16, visual.cylinder_size, mass, nullptr);
         else if (!isArrayEmpty(visual.box_size))
-            visual.n = simCreatePureShape( 0,1+2+16, visual.box_size, mass, NULL);
+            visual.n = simCreatePureShape( 0,1+2+16, visual.box_size, mass, nullptr);
     }
 
     //collisions
@@ -346,11 +346,11 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
         }
         else if (!isArrayEmpty(collision.sphere_size))
-            collision.n = simCreatePureShape( 1,1+2+4+8+16*(!inertiaPresent), collision.sphere_size, mass, NULL);
+            collision.n = simCreatePureShape( 1,1+2+4+8+16*(!inertiaPresent), collision.sphere_size, mass, nullptr);
         else if (!isArrayEmpty(collision.cylinder_size))
-            collision.n = simCreatePureShape( 2,1+2+4+8+16*(!inertiaPresent), collision.cylinder_size, mass, NULL);
+            collision.n = simCreatePureShape( 2,1+2+4+8+16*(!inertiaPresent), collision.cylinder_size, mass, nullptr);
         else if (!isArrayEmpty(collision.box_size))
-            collision.n = simCreatePureShape( 0,1+2+4+8+16*(!inertiaPresent), collision.box_size, mass, NULL);
+            collision.n = simCreatePureShape( 0,1+2+4+8+16*(!inertiaPresent), collision.box_size, mass, nullptr);
 
         // Set the respondable mask:
         simSetObjectIntParameter(collision.n,3019,0xff00); // colliding with everything except with other objects in that tree hierarchy
@@ -372,7 +372,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         { // This is an empty link (no visual and no collision); create a dummy visual
             float dummySize[3]={0.0005f,0.0005f,0.0005f};
             addVisual();
-            currentVisual().n = simCreatePureShape( 0,1+16, dummySize, 0.00001f, NULL);
+            currentVisual().n = simCreatePureShape( 0,1+16, dummySize, 0.00001f, nullptr);
         }
     }
 
@@ -381,7 +381,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         // we do not have a collision object. Let's create a dummy collision object, since inertias can't exist on their own in CoppeliaSim:
         float dummySize[3]={0.05f,0.05f,0.05f};
         addCollision();
-        currentCollision().n = simCreatePureShape( 1,1+2+4, dummySize, mass, NULL); // we make it non-respondable!
+        currentCollision().n = simCreatePureShape( 1,1+2+4, dummySize, mass, nullptr); // we make it non-respondable!
     }
 
     // Grouping visuals
@@ -393,8 +393,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         if (visual.n!=-1) {
             if (visual.hasColor)
             {
-                simSetShapeColor(visual.n,NULL,sim_colorcomponent_ambient_diffuse,visual.rgba);
-                simSetShapeColor(visual.n,NULL,sim_colorcomponent_specular,specular);
+                simSetShapeColor(visual.n,nullptr,sim_colorcomponent_ambient_diffuse,visual.rgba);
+                simSetShapeColor(visual.n,nullptr,sim_colorcomponent_specular,specular);
             }
 
             C7Vector frame;
@@ -536,7 +536,7 @@ int urdfLink::scaleShapeIfRequired(int shapeHandle,float scalingFactors[3])
     int verticesSize;
     int* indices;
     int indicesSize;
-    if (simGetShapeMesh(shapeHandle,&vertices,&verticesSize,&indices,&indicesSize,NULL)!=-1)
+    if (simGetShapeMesh(shapeHandle,&vertices,&verticesSize,&indices,&indicesSize,nullptr)!=-1)
     {
         // Scale the vertices:
         C7Vector tr;
@@ -567,7 +567,7 @@ int urdfLink::scaleShapeIfRequired(int shapeHandle,float scalingFactors[3])
         }
         // Remove the old shape and create a new one with the scaled data:
         simRemoveObject(shapeHandle);
-        newShapeHandle=simCreateMeshShape(2,20.0f*piValue/180.0f,vertices,verticesSize,indices,indicesSize,NULL);
+        newShapeHandle=simCreateMeshShape(2,20.0f*piValue/180.0f,vertices,verticesSize,indices,indicesSize,nullptr);
         simReleaseBuffer((char*)vertices);
         simReleaseBuffer((char*)indices);
     }

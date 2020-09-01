@@ -178,7 +178,7 @@ void CUrdfDialog::handleCommands()
         if (cmd.cmdId==IMPORT_CMD)
         {
             simChar* pathAndFile=simFileDialog(sim_filedlg_type_load,"URDF PLUGIN LOADER","","","URDF Files","urdf");
-            if (pathAndFile!=NULL)
+            if (pathAndFile!=nullptr)
             {
                 std::string fileURDF(pathAndFile);
                 simReleaseBuffer(pathAndFile);
