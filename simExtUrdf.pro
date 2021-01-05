@@ -4,7 +4,7 @@ TARGET = simExtUrdf
 TEMPLATE = lib
 
 DEFINES -= UNICODE
-CONFIG += shared
+CONFIG += shared plugin
 INCLUDEPATH += "../include"
 INCLUDEPATH += "../simMath"
 greaterThan(QT_MAJOR_VERSION,4): QT += widgets
