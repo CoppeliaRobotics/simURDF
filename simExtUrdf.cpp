@@ -1,4 +1,4 @@
-#include "simExtUrdf.h"
+#include "simExtURDF.h"
 #include "simLib.h"
 #include <iostream>
 #include <vector>
@@ -19,7 +19,7 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define PLUGIN_VERSION 11   // 1 until 20/1/2013 (1 was a very early beta)
+#define PLUGIN_VERSION 12   // 1 until 20/1/2013 (1 was a very early beta)
                             // 2 until 10/1/2014 (CoppeliaSim3.0.5)
                             // 3: new lock
                             // 4: since CoppeliaSim 3.1.2
@@ -30,6 +30,7 @@
                             // 9: since CoppeliaSim 3.3.1 (Using stacks to exchange data with scripts)
                             // 10: since CoppeliaSim 3.4.1 (new API notation)
                             // 11: using simSetShapeInertia and simSetShapeMass instead of simSetShapeMassAndInertia (since CoppeliaSim 4.1.0 rev2)
+                            // 12: Urdf --> URDF
 
 static LIBRARY simLib;
 static CUrdfDialog* urdfDialog=nullptr;
@@ -74,16 +75,16 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
         simSetModuleMenuItemState(urdfDialog->dialogMenuItemHandle,1,"URDF import...");
     }
 
-    simRegisterScriptVariable("simURDF","require('simExtUrdf')",0);
+    simRegisterScriptVariable("simURDF","require('simURDF')",0);
 
-    simRegisterScriptCallbackFunction("simURDF.import@Urdf","string robot_name=simURDF.import(string urdf,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
-    simRegisterScriptCallbackFunction("simURDF.importFile@Urdf","string robot_name=simURDF.importFile(string fileAndPath,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
+    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
+    simRegisterScriptCallbackFunction("simURDF.importFile@URDF","string robot_name=simURDF.importFile(string fileAndPath,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
 
     // Following for backward compatibility:
     simRegisterScriptVariable("simExtImportUrdf","simURDF.import",-1);
     simRegisterScriptVariable("simExtImportUrdfFile","simURDF.importFile",-1);
-    simRegisterScriptCallbackFunction("simExtImportUrdf@Urdf","Please use the simURDF.import notation instead",0);
-    simRegisterScriptCallbackFunction("simExtImportUrdfFile@Urdf","Please use the simURDF.importFile notation instead",0);
+    simRegisterScriptCallbackFunction("simExtImportUrdf@URDF","Please use the simURDF.import notation instead",0);
+    simRegisterScriptCallbackFunction("simExtImportUrdfFile@URDF","Please use the simURDF.importFile notation instead",0);
 
     return(PLUGIN_VERSION);
 }

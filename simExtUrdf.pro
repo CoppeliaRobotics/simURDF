@@ -1,6 +1,6 @@
 include(config.pri)
 
-TARGET = simExtUrdf
+TARGET = simExtURDF
 TEMPLATE = lib
 
 DEFINES -= UNICODE
@@ -48,7 +48,7 @@ unix:!macx {
 }
 
 SOURCES += \
-    simExtUrdf.cpp \
+    simExtURDF.cpp \
     urdfdialog.cpp \
     tinyxml2/tinyxml2.cpp \
     robot.cpp \
@@ -69,7 +69,7 @@ SOURCES += \
     rospackagehelper.cpp
 
 HEADERS +=\
-    simExtUrdf.h \
+    simExtURDF.h \
     urdfdialog.h \
     tinyxml2/tinyxml2.h \
     robot.h \
