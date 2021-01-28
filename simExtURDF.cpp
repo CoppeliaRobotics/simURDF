@@ -77,7 +77,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 
     simRegisterScriptVariable("simURDF","require('simURDF')",0);
 
-    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
+    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0)",simImportUrdfCallback);
     simRegisterScriptCallbackFunction("simURDF.importFile@URDF","string robot_name=simURDF.importFile(string fileAndPath,bool hideCollisionLinks=true,bool hideJoints=true,bool convexDecomposeNonConvexCollidables=true,bool createVisualIfNone=true,bool showConvexDecompositionDlg=false,bool centerAboveGround=true,bool makeModel=true,bool noSelfCollision=false,bool positionCtrl=true)",simImportUrdfCallback);
 
     // Following for backward compatibility:
@@ -150,7 +150,7 @@ SIM_DLLEXPORT simChar* simImportUrdf(const simChar* filenameOrUrdf, simBool hide
 const int inArgs_IMPORT[]={
     10,
     sim_script_arg_string,0, // filenameAndPath or URDF contents
-    sim_script_arg_bool,0, // assign collision links to layer 9
+    sim_script_arg_int32,0, // assign collision links to layer 9
     sim_script_arg_bool,0, // assign joints to layer 10
     sim_script_arg_bool,0, // convex decompose
     sim_script_arg_bool,0, // create visual links if none
@@ -167,6 +167,7 @@ void simImportUrdfCallback(SScriptCallBack* p)
     if (D.readDataFromStack(p->stackID,inArgs_IMPORT,inArgs_IMPORT[0]-9,"simURDF.import"))
     {
         std::vector<CScriptFunctionDataItem>* inData=D.getInDataPtr();
+        int options=0;
         bool arg2=true;
         bool arg3=true;
         bool arg4=true;
@@ -176,8 +177,11 @@ void simImportUrdfCallback(SScriptCallBack* p)
         bool arg8=true;
         bool arg9=false;
         bool arg10=true;
-        if ( (inData->size()>=2)&&(inData->at(1).boolData.size()==1) )
-            arg2=inData->at(1).boolData[0];
+        if ( (inData->size()>=2)&&(inData->at(1).int32Data.size()==1) )
+        {
+            options=inData->at(1).int32Data[0];
+            arg2=options;
+        }
         if ( (inData->size()>=3)&&(inData->at(2).boolData.size()==1) )
             arg3=inData->at(2).boolData[0];
         if ( (inData->size()>=4)&&(inData->at(3).boolData.size()==1) )
@@ -194,6 +198,17 @@ void simImportUrdfCallback(SScriptCallBack* p)
             arg9=inData->at(8).boolData[0];
         if ( (inData->size()>=10)&&(inData->at(9).boolData.size()==1) )
             arg10=inData->at(9).boolData[0];
+        if (options>1)
+        {
+            arg3=((options&2)==0);
+            arg4=((options&4)==0);
+            arg5=((options&8)==0);
+            arg6=((options&16)!=0);
+            arg7=((options&32)==0);
+            arg8=((options&64)==0);
+            arg9=((options&128)!=0);
+            arg10=((options&256)==0);
+        }
         simChar* name = simImportUrdf(inData->at(0).stringData[0].c_str(),arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
 
         D.pushOutData(CScriptFunctionDataItem(name));
