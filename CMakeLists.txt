@@ -41,5 +41,6 @@ coppeliasim_add_plugin(
     ${COPPELIASIM_COMMON_DIR}/scriptFunctionDataItem.cpp
 )
 coppeliasim_add_addon("simAddOnURDF importer.lua")
+coppeliasim_add_lua(simURDF.lua)
 coppeliasim_add_helpfile(simURDF.htm)
 coppeliasim_add_helpfile(simURDF.json SUBDIR index)
