@@ -1,5 +1,8 @@
 include(config.pri)
 
+QT -= core
+QT -= gui
+
 TARGET = simExtURDF
 TEMPLATE = lib
 
@@ -49,7 +52,6 @@ unix:!macx {
 
 SOURCES += \
     simExtURDF.cpp \
-    urdfdialog.cpp \
     tinyxml2/tinyxml2.cpp \
     robot.cpp \
     link.cpp \
@@ -70,7 +72,6 @@ SOURCES += \
 
 HEADERS +=\
     simExtURDF.h \
-    urdfdialog.h \
     tinyxml2/tinyxml2.h \
     robot.h \
     link.h \
@@ -97,7 +98,3 @@ unix:!symbian {
     }
     INSTALLS += target
 }
-
-FORMS += \
-    urdfdialog.ui
-

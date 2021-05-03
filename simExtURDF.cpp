@@ -6,7 +6,6 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <math.h>
-#include "urdfdialog.h"
 #include "robot.h"
 #include "scriptFunctionData.h"
 
@@ -19,7 +18,7 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define PLUGIN_VERSION 12   // 1 until 20/1/2013 (1 was a very early beta)
+#define PLUGIN_VERSION 13   // 1 until 20/1/2013 (1 was a very early beta)
                             // 2 until 10/1/2014 (CoppeliaSim3.0.5)
                             // 3: new lock
                             // 4: since CoppeliaSim 3.1.2
@@ -31,9 +30,9 @@
                             // 10: since CoppeliaSim 3.4.1 (new API notation)
                             // 11: using simSetShapeInertia and simSetShapeMass instead of simSetShapeMassAndInertia (since CoppeliaSim 4.1.0 rev2)
                             // 12: Urdf --> URDF
+                            // 13: removed C++ UI, now provided via add-on
 
 static LIBRARY simLib;
-static CUrdfDialog* urdfDialog=nullptr;
 
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
@@ -67,14 +66,6 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
 
-    if (simGetBooleanParameter(sim_boolparam_headless)==0)
-    { // if CoppeliaSim doesn't run in headless mode
-        QWidget* pMainWindow = (QWidget*)simGetMainWindow(1);
-        urdfDialog=new CUrdfDialog(pMainWindow); // The plugin dialog
-        simAddModuleMenuEntry("",1,&urdfDialog->dialogMenuItemHandle);
-        simSetModuleMenuItemState(urdfDialog->dialogMenuItemHandle,1,"URDF import...");
-    }
-
     simRegisterScriptVariable("simURDF","require('simURDF')",0);
 
     simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0)",simImportUrdfCallback);
@@ -91,47 +82,15 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 
 SIM_DLLEXPORT void simEnd()
 {
-    delete urdfDialog;
     unloadSimLibrary(simLib); // release the library
 }
 
 SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
 {
-    static bool refreshDlgFlag=true;
     int errorModeSaved;
     simGetIntegerParameter(sim_intparam_error_report_mode,&errorModeSaved);
     simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
     void* retVal=nullptr;
-
-    if (urdfDialog!=nullptr)
-    {
-        if (message==sim_message_eventcallback_refreshdialogs)
-            refreshDlgFlag=true; // CoppeliaSim dialogs were refreshed. Maybe a good idea to refresh this plugin's dialog too
-
-        if (message==sim_message_eventcallback_menuitemselected)
-        { // A custom menu bar entry was selected..
-            if (auxiliaryData[0]==urdfDialog->dialogMenuItemHandle)
-                urdfDialog->makeVisible(!urdfDialog->getVisible()); // Toggle visibility of the dialog
-        }
-
-        if (message==sim_message_eventcallback_instancepass)
-        { // It is important to always correctly react to events in CoppeliaSim. This message is the most convenient way to do so:
-            urdfDialog->handleCommands();
-            urdfDialog->setSimulationStopped(simGetSimulationState()==sim_simulation_stopped);
-
-            int flags=auxiliaryData[0];
-            bool sceneContentChanged=((flags&(1+2+4+8+16+32+64+256))!=0); // object erased, created, model or scene loaded, und/redo called, instance switched, or object scaled since last sim_message_eventcallback_instancepass message
-            bool instanceSwitched=((flags&64)!=0);
-
-            if (sceneContentChanged)
-                refreshDlgFlag=true;
-        }
-        if ((message==sim_message_eventcallback_guipass)&&refreshDlgFlag)
-        { // handle refresh of the plugin's dialog:
-            urdfDialog->refresh(); // Refresh the dialog
-            refreshDlgFlag=false;
-        }
-    }
 
     simSetIntegerParameter(sim_intparam_error_report_mode,errorModeSaved); // restore previous settings
     return(retVal);
@@ -145,7 +104,7 @@ SIM_DLLEXPORT simChar* simImportUrdf(const simChar* filenameOrUrdf, simBool hide
     memcpy((void*) result, (void*) Robot.name.c_str(), Robot.name.length()+1);
 
     return result;
-} 
+}
 
 const int inArgs_IMPORT[]={
     10,
