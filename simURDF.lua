@@ -12,14 +12,14 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     outputMode=outputMode or 'file'
     exportFuncs=exportFuncs or {}
 
-    exportFuncs.newNode=function(t)
+    exportFuncs.newNode=exportFuncs.newNode or function(t)
         assert(type(t)=='table','bad type')
         local name=table.remove(t,1)
         t[0]=name
         return t
     end
 
-    exportFuncs.toXML=function(exportFuncs,node,level)
+    exportFuncs.toXML=exportFuncs.toXML or function(exportFuncs,node,level)
         level=level or 0
         local indent=''; for i=1,level do indent=indent..'    ' end
         local xml=''
@@ -43,7 +43,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return xml
     end
 
-    exportFuncs.getShapeGeometryNode=function(exportFuncs,shapeHandle,baseName)
+    exportFuncs.getShapeGeometryNode=exportFuncs.getShapeGeometryNode or function(exportFuncs,shapeHandle,baseName)
         local geometryNode=exportFuncs.newNode{'geometry'}
         local r,pureType,dims=sim.getShapeGeomInfo(shapeHandle)
         local pure=(r&2)>0
@@ -68,7 +68,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return geometryNode
     end
 
-    exportFuncs.matrixToRPY=function(exportFuncs,m,alternateSolution)
+    exportFuncs.matrixToRPY=exportFuncs.matrixToRPY or function(exportFuncs,m,alternateSolution)
         -- Convert a 3x3 rotation matrix to roll-pitch-yaw coordinates.
         -- URDF's rpy are the Z1-Y2-X3 Tait-Bryan angles.
         -- See https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
@@ -100,7 +100,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return {r,p,y}
     end
 
-    exportFuncs.matrixToXYZRPY=function(exportFuncs,m,alternateSolution)
+    exportFuncs.matrixToXYZRPY=exportFuncs.matrixToXYZRPY or function(exportFuncs,m,alternateSolution)
         if getmetatable(m)~=Matrix then
             assert(type(m)=='table','table expected')
             assert(#m==12 or #m==16,'not a 4x4 matrix (12 or 16 values expected)')
@@ -113,7 +113,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return xyz,rpy
     end
 
-    exportFuncs.getShapeOriginNode=function(exportFuncs,shapeHandle,parentHandle)
+    exportFuncs.getShapeOriginNode=exportFuncs.getShapeOriginNode or function(exportFuncs,shapeHandle,parentHandle)
         local originNode=exportFuncs.newNode{'origin'}
         local m=sim.getObjectMatrix(shapeHandle,parentHandle)
         local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
@@ -122,7 +122,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return originNode
     end
 
-    exportFuncs.getLinkInertialNode=function(exportFuncs,linkHandle)
+    exportFuncs.getLinkInertialNode=exportFuncs.getLinkInertialNode or function(exportFuncs,linkHandle)
         local inertialNode=exportFuncs.newNode{'inertial'}
         local mi,mt=sim.getShapeInertia(linkHandle)
         local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,mt)
@@ -142,14 +142,14 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return inertialNode
     end
 
-    exportFuncs.getLinkCollisionNode=function(exportFuncs,linkHandle,baseName)
+    exportFuncs.getLinkCollisionNode=exportFuncs.getLinkCollisionNode or function(exportFuncs,linkHandle,baseName)
         local collisionNode=exportFuncs.newNode{'collision'}
         table.insert(collisionNode,exportFuncs.getShapeOriginNode(exportFuncs,linkHandle,linkHandle))
         table.insert(collisionNode,exportFuncs.getShapeGeometryNode(exportFuncs,linkHandle,baseName))
         return collisionNode
     end
 
-    exportFuncs.getVisuals=function(exportFuncs,linkHandle)
+    exportFuncs.getVisuals=exportFuncs.getVisuals or function(exportFuncs,linkHandle)
         local visuals={}
         for i,visual in ipairs(sim.getObjectsInTree(linkHandle,sim.object_shape_type,3)) do
             local resp=sim.getObjectInt32Param(visual,sim.shapeintparam_respondable)>0
@@ -158,7 +158,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return visuals
     end
 
-    exportFuncs.getLinkVisualNode=function(exportFuncs,visualHandle,linkHandle,baseName)
+    exportFuncs.getLinkVisualNode=exportFuncs.getLinkVisualNode or function(exportFuncs,visualHandle,linkHandle,baseName)
         local visualNode=exportFuncs.newNode{'visual'}
         table.insert(visualNode,exportFuncs.getShapeOriginNode(exportFuncs,visualHandle,linkHandle))
         table.insert(visualNode,exportFuncs.getShapeGeometryNode(exportFuncs,visualHandle,baseName))
@@ -170,7 +170,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return visualNode
     end
 
-    exportFuncs.getLinkNode=function(exportFuncs,linkHandle,baseName)
+    exportFuncs.getLinkNode=exportFuncs.getLinkNode or function(exportFuncs,linkHandle,baseName)
         local linkNode=exportFuncs.newNode{'link',name=sim.getObjectName(linkHandle)}
         table.insert(linkNode,exportFuncs.getLinkInertialNode(exportFuncs,linkHandle))
         table.insert(linkNode,exportFuncs.getLinkCollisionNode(exportFuncs,linkHandle,baseName))
@@ -183,7 +183,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return linkNode
     end
 
-    exportFuncs.getJointType=function(exportFuncs,jointHandle)
+    exportFuncs.getJointType=exportFuncs.getJointType or function(exportFuncs,jointHandle)
         local jointType=sim.getJointType(jointHandle)
         local cyclic,interval=sim.getJointInterval(jointHandle)
         if jointType==sim.joint_revolute_subtype then
@@ -197,12 +197,12 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         end
     end
 
-    exportFuncs.getJointAxisNode=function(exportFuncs,jointHandle)
+    exportFuncs.getJointAxisNode=exportFuncs.getJointAxisNode or function(exportFuncs,jointHandle)
         local axisNode=exportFuncs.newNode{'axis',xyz='0 0 1'}
         return axisNode
     end
 
-    exportFuncs.getJointLimitNode=function(exportFuncs,jointHandle)
+    exportFuncs.getJointLimitNode=exportFuncs.getJointLimitNode or function(exportFuncs,jointHandle)
         local cyclic,interval=sim.getJointInterval(jointHandle)
         if not cyclic then
             local limitNode=exportFuncs.newNode{'limit'}
@@ -214,7 +214,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         end
     end
 
-    exportFuncs.getJointOriginNode=function(exportFuncs,jointHandle,parentHandle,childHandle)
+    exportFuncs.getJointOriginNode=exportFuncs.getJointOriginNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
         local originNode=exportFuncs.newNode{'origin'}
         local m=sim.getObjectMatrix(childHandle,parentHandle)
         local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
@@ -223,7 +223,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return originNode
     end
 
-    exportFuncs.getJointNode=function(exportFuncs,jointHandle,parentHandle,childHandle)
+    exportFuncs.getJointNode=exportFuncs.getJointNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
         local jointNode=exportFuncs.newNode{'joint'}
         jointNode.name=sim.getObjectName(jointHandle)
         jointNode.type=exportFuncs.getJointType(exportFuncs,jointHandle)
@@ -236,7 +236,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return jointNode
     end
 
-    exportFuncs.getRobotNode=function(exportFuncs,modelHandle,baseName)
+    exportFuncs.getRobotNode=exportFuncs.getRobotNode or function(exportFuncs,modelHandle,baseName)
         local robotNode=exportFuncs.newNode{'robot',name=sim.getObjectName(modelHandle)}
         local linkDone={}
         for i,link in ipairs(exportFuncs.getModelHierarchy(exportFuncs,modelHandle)) do
@@ -251,7 +251,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return robotNode
     end
 
-    exportFuncs.getModelHierarchy=function(exportFuncs,modelHandle)
+    exportFuncs.getModelHierarchy=exportFuncs.getModelHierarchy or function(exportFuncs,modelHandle)
         local links={}
         for i,jointHandle in ipairs(sim.getObjectsInTree(modelHandle,sim.object_joint_type,1)) do
             local parentHandle=sim.getObjectParent(jointHandle)
