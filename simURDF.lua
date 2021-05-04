@@ -60,7 +60,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
             local cylinderNode=exportFuncs.newNode{'cylinder',radius=x/2,length=z}
             table.insert(geometryNode,cylinderNode)
         else
-            local fn=baseName..'_'..sim.getObjectName(shapeHandle)..'.dae'
+            local fn=string.format('%s_%s.dae',baseName,sim.getObjectName(shapeHandle))
             simAssimp.exportShapes({shapeHandle},fn,'collada')
             local meshNode=exportFuncs.newNode{'mesh',filename='file://'..fn}
             table.insert(geometryNode,meshNode)
