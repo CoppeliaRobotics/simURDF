@@ -61,26 +61,62 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
             table.insert(geometryNode,cylinderNode)
         else
             local fn=string.format('%s_%s.dae',baseName,sim.getObjectName(shapeHandle))
-            simAssimp.exportShapes({shapeHandle},fn,'collada')
+            simAssimp.exportShapes({shapeHandle},fn,'collada',1.0,simAssimp.upVector.z,512)
             local meshNode=exportFuncs.newNode{'mesh',filename='file://'..fn}
             table.insert(geometryNode,meshNode)
         end
         return geometryNode
     end
 
+    exportFuncs.matrixToRPY=function(exportFuncs,m,alternateSolution)
+        -- Convert a 3x3 rotation matrix to roll-pitch-yaw coordinates.
+        -- URDF's rpy are the Z1-Y2-X3 Tait-Bryan angles.
+        -- See https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
+        if getmetatable(m)~=Matrix then
+            assert(type(m)=='table','table expected')
+            assert(#m==9,'not a 3x3 matrix (9 values expected)')
+            m=Matrix(3,3,m)
+        end
+        assert(m:sameshape{3,3},'not a 3x3 matrix')
+        local r,p,y=0,0,0
+        if math.abs(m[3][1])>=1-1e-12 then
+            y=0
+            if m[3][1]<0 then
+                p=math.pi/2
+                r=math.atan2(m[1][2],m[1][3])
+            else
+                p=-math.pi/2
+                r=math.atan2(-m[1][2],-m[1][3])
+            end
+        else
+            if alternateSolution then
+                p=-math.asin(m[3][1])
+            else
+                p=math.pi+math.asin(m[3][1])
+            end
+            r=math.atan2(m[3][2]/math.cos(p),m[3][3]/math.cos(p))
+            y=math.atan2(m[2][1]/math.cos(p),m[1][1]/math.cos(p))
+        end
+        return {r,p,y}
+    end
+
+    exportFuncs.matrixToXYZRPY=function(exportFuncs,m,alternateSolution)
+        if getmetatable(m)~=Matrix then
+            assert(type(m)=='table','table expected')
+            assert(#m==12 or #m==16,'not a 4x4 matrix (12 or 16 values expected)')
+            m=Matrix(#m//4,4,m)
+        end
+        assert(m:sameshape{3,4} or m:sameshape{4,4},'not a 4x4 matrix')
+        local R,t=m:slice(1,1,3,3),m:slice(1,4,3,4)
+        local xyz={t[1],t[2],t[3]}
+        local rpy=exportFuncs.matrixToRPY(exportFuncs,R,alternateSolution)
+        return xyz,rpy
+    end
+
     exportFuncs.getShapeOriginNode=function(exportFuncs,shapeHandle,parentHandle)
         local originNode=exportFuncs.newNode{'origin'}
         local m=sim.getObjectMatrix(shapeHandle,parentHandle)
-        local r,pureType,dims=sim.getShapeGeomInfo(shapeHandle)
-        local pure=(r&2)>0
-        if not pure then
-            -- XXX: mesh's vertices' coordinates are in global coords!
-            local mv=sim.getObjectMatrix(shapeHandle,-1)
-            sim.invertMatrix(mv)
-            m=sim.multiplyMatrices(m,mv)
-        end
-        local xyz={m[4],m[8],m[12]}
-        local rpy=sim.getEulerAnglesFromMatrix(m)
+        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
         originNode.xyz=string.format('%f %f %f',unpack(xyz))
         originNode.rpy=string.format('%f %f %f',unpack(rpy))
         return originNode
@@ -89,8 +125,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     exportFuncs.getLinkInertialNode=function(exportFuncs,linkHandle)
         local inertialNode=exportFuncs.newNode{'inertial'}
         local mi,mt=sim.getShapeInertia(linkHandle)
-        local xyz={mt[4],mt[8],mt[12]}
-        local rpy=sim.getEulerAnglesFromMatrix(mt)
+        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,mt)
         table.insert(inertialNode,exportFuncs.newNode{'origin',
             xyz=string.format('%f %f %f',unpack(xyz)),
             rpy=string.format('%f %f %f',unpack(rpy)),
@@ -182,8 +217,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     exportFuncs.getJointOriginNode=function(exportFuncs,jointHandle,parentHandle,childHandle)
         local originNode=exportFuncs.newNode{'origin'}
         local m=sim.getObjectMatrix(childHandle,parentHandle)
-        local xyz={m[4],m[8],m[12]}
-        local rpy=sim.getEulerAnglesFromMatrix(m)
+        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
         originNode.xyz=string.format('%f %f %f',unpack(xyz))
         originNode.rpy=string.format('%f %f %f',unpack(rpy))
         return originNode
