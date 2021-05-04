@@ -16,8 +16,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${LIBPLUGIN_DIR}/cmake)
 find_package(CoppeliaSim 4.1.0.0 REQUIRED)
 
-include_directories(${COPPELIASIM_ROOT_DIR}/programming/simMath)
-
 coppeliasim_add_plugin(
     simExtURDF
     LEGACY
@@ -40,6 +38,7 @@ coppeliasim_add_plugin(
     ${COPPELIASIM_COMMON_DIR}/scriptFunctionData.cpp
     ${COPPELIASIM_COMMON_DIR}/scriptFunctionDataItem.cpp
 )
+target_include_directories(simExtURDF PRIVATE ${COPPELIASIM_ROOT_DIR}/programming/simMath)
 coppeliasim_add_addon("simAddOnURDF importer.lua")
 coppeliasim_add_lua(simURDF.lua)
 coppeliasim_add_helpfile(simURDF.htm)
