@@ -197,9 +197,8 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         end
     end
 
-    exportFuncs.getJointAxisNode=exportFuncs.getJointAxisNode or function(exportFuncs,jointHandle)
-        local axisNode=exportFuncs.newNode{'axis',xyz='0 0 1'}
-        return axisNode
+    exportFuncs.getJointAxisNode=exportFuncs.getJointAxisNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
+        return exportFuncs.newNode{'axis',xyz='0 0 1'}
     end
 
     exportFuncs.getJointLimitNode=exportFuncs.getJointLimitNode or function(exportFuncs,jointHandle)
@@ -227,7 +226,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         local jointNode=exportFuncs.newNode{'joint'}
         jointNode.name=sim.getObjectName(jointHandle)
         jointNode.type=exportFuncs.getJointType(exportFuncs,jointHandle)
-        table.insert(jointNode,exportFuncs.getJointAxisNode(exportFuncs,jointHandle))
+        table.insert(jointNode,exportFuncs.getJointAxisNode(exportFuncs,jointHandle,parentHandle,childHandle))
         local limitNode=exportFuncs.getJointLimitNode(exportFuncs,jointHandle)
         if limitNode~=nil then table.insert(jointNode,limitNode) end
         table.insert(jointNode,exportFuncs.newNode{'parent',link=sim.getObjectName(parentHandle)})
