@@ -61,7 +61,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
             table.insert(geometryNode,cylinderNode)
         else
             local fn=string.format('%s_%s.dae',baseName,sim.getObjectName(shapeHandle))
-            simAssimp.exportShapes({shapeHandle},fn,'collada',1.0,simAssimp.upVector.z,512)
+            simAssimp.exportShapes({shapeHandle},fn,'collada',1.0,simAssimp.upVector.z,4+512)
             local meshNode=exportFuncs.newNode{'mesh',filename='file://'..fn}
             table.insert(geometryNode,meshNode)
         end
