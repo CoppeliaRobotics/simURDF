@@ -636,14 +636,17 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
 
     //Set joint parentship between them (thes parentship will be remove before adding the joints)
     for(size_t i = 0; i < vJoints.size() ; i++)
-    {   
-        int parentJointIndex=getJointPosition(vJoints.at(i)->parentJoint);
-        if ( parentJointIndex!= -1)
+    {
+        if (vJoints.at(i)->parentJoint.size()>0)
         {
-            simInt nParentJoint = vJoints.at(parentJointIndex)->nJoint;
-            simInt nJoint = vJoints.at(i)->nJoint;
-            simSetObjectParent(nJoint,nParentJoint,false);
-        }   
+            int parentJointIndex=getJointPosition(vJoints.at(i)->parentJoint);
+            if ( parentJointIndex!= -1)
+            {
+                simInt nParentJoint = vJoints.at(parentJointIndex)->nJoint;
+                simInt nJoint = vJoints.at(i)->nJoint;
+                simSetObjectParent(nJoint,nParentJoint,false);
+            }
+        }
     }
 
     //Delete all the partnership without moving the joints but after doing that update the transform matrix
@@ -741,11 +744,14 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
 
             C7Vector trAbs(linkDesiredConf*linkInitialConf); // still local
 
-            int parentJointIndex=getJointPosition(Link->parent);
-            if( parentJointIndex!= -1)
-            {       
-                joint* Joint = vJoints.at(parentJointIndex);
-                trAbs=Joint->jointBaseFrame*trAbs; // now absolute
+            if (Link->parent.size()>0)
+            {
+                int parentJointIndex=getJointPosition(Link->parent);
+                if( parentJointIndex!= -1)
+                {
+                    joint* Joint = vJoints.at(parentJointIndex);
+                    trAbs=Joint->jointBaseFrame*trAbs; // now absolute
+                }
             }
             
 
@@ -835,9 +841,12 @@ void robot::createSensors()
                 int parentLinkIndex=getLinkPosition(Sensor->parentLink);
                 if (parentLinkIndex!=-1)
                 {
-                    int parentJointLinkIndex=getJointPosition(vLinks.at(parentLinkIndex)->parent);
-                    if (parentJointLinkIndex!=-1)
-                        x=vJoints.at(parentJointLinkIndex)->jointBaseFrame;
+                    if (vLinks.at(parentLinkIndex)->parent.size()>0)
+                    {
+                        int parentJointLinkIndex=getJointPosition(vLinks.at(parentLinkIndex)->parent);
+                        if (parentJointLinkIndex!=-1)
+                            x=vJoints.at(parentJointLinkIndex)->jointBaseFrame;
+                    }
                 }
                 C7Vector sensorGlobal(x*sensorLocal);
                 if (Sensor->nSensor!=-1)
@@ -863,7 +872,6 @@ int robot::getJointPosition(std::string jointName)
     for(size_t i = 0; i < vJoints.size() ; i++)
     {
         if(vJoints.at(i)->name == jointName){return i;}
-    
     }
     std::string txt("simExtURDF: error: there is no joint with name '"+ jointName+"'");
     printToConsole(sim_verbosity_errors,txt.c_str());
