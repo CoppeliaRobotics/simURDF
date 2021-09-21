@@ -27,9 +27,9 @@ class urdfVisualOrCollision
         float xyz[3], rpy[3];
 
         // For geometry
-        float box_size[3];              //If all the coordinates are zero do not create the object
-        float sphere_size[3];           //If all the coordinates are zero do not create the object
-        float cylinder_size[3];         //If all the coordinates are zero do not create the object
+        float box_size[3];
+        float sphere_size[3];
+        float cylinder_size[3];
         float rgba[4];                  // a is ignored
         bool hasColor;
         float mesh_scaling[3];
@@ -88,6 +88,6 @@ public:
     void setColor(std::string color);
     void verifyInertia();
     int scaleShapeIfRequired(int shapeHandle,float scalingFactors[3]);
-    void createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool& showConvexDecompositionDlg);
+    void createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull);
 };
 

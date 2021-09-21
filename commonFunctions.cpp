@@ -19,14 +19,25 @@ void printToConsole(int verbosity,const char* txt)
 
 void stringToArray(float array[],const std::string xyz)
 {
-    
-    std::string buf; 
+    std::string buf;
     std::stringstream ss(xyz); 
 
     int i = 0;
     while (ss >> buf){ array[i++]=getFloat(buf);}
-    
-    
+}
+
+void stringToSizeArray(float array[],const std::string xyz)
+{
+    std::string buf;
+    std::stringstream ss(xyz);
+
+    for (size_t i=0;i<3;i++)
+    {
+        if (ss >> buf)
+            array[i]=getFloat(buf);
+        if (array[i]<0.001f)
+            array[i]=0.001f;
+    }
 }
 
 float getFloat(const std::string& text)
@@ -74,6 +85,9 @@ std::string printMatrix(const float arr[])
 
 void setSimObjectName(int objectHandle,const char* desiredName)
 {
+#if SIM_PROGRAM_VERSION_NB>=40300
+    simSetObjectAlias(objectHandle,desiredName,0);
+#else
     std::string baseName(desiredName);
     for (int i=0;i<int(baseName.size());i++)
     { // Objects in CoppeliaSim can only contain a-z, A-Z, 0-9, '_' or exaclty one '#' optionally followed by a number
@@ -85,6 +99,7 @@ void setSimObjectName(int objectHandle,const char* desiredName)
     int suffix=2;
     while (simSetObjectName(objectHandle,objName.c_str())==-1)
         objName=baseName+boost::lexical_cast<std::string>(suffix++);
+#endif
 }
 
 C4Vector getQuaternionFromRpy(float rpy[3])

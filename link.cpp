@@ -18,6 +18,17 @@ urdfVisualOrCollision::urdfVisualOrCollision()
          n = -1;
 }
 
+std::string strip(const char* filename)
+{
+    std::string f(filename);
+    for (size_t i=0;i<f.size();i++)
+        f[i]=std::tolower(f[i]);
+    size_t p=f.find("file://");
+    if (p!=std::string::npos)
+        f=f.substr(7);
+    return f;
+}
+
 urdfLink::urdfLink()
 {
     //Initialize arrays
@@ -84,18 +95,18 @@ void urdfLink::setBox(std::string gazebo_size,std::string choose)
 {
     if(choose == "visual")
     {
-        stringToArray(currentVisual().box_size, gazebo_size);
+        stringToSizeArray(currentVisual().box_size, gazebo_size);
     }
     if(choose == "collision")
     {
-        stringToArray(currentCollision().box_size, gazebo_size);
+        stringToSizeArray(currentCollision().box_size, gazebo_size);
     }
 }
 void urdfLink::setSphere(std::string gazebo_radius,std::string choose)
 {
     if(choose == "visual")
     {
-        stringToArray(currentVisual().sphere_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_radius);
+        stringToSizeArray(currentVisual().sphere_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_radius);
 
         urdfVisualOrCollision &visual = currentVisual();
         visual.sphere_size[0] = visual.sphere_size[0] * 2; //Radius to bounding box conversion
@@ -105,7 +116,7 @@ void urdfLink::setSphere(std::string gazebo_radius,std::string choose)
     }
     if(choose == "collision")
     {
-        stringToArray(currentCollision().sphere_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_radius);
+        stringToSizeArray(currentCollision().sphere_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_radius);
         
         urdfVisualOrCollision &collision = currentCollision();
         collision.sphere_size[0] = collision.sphere_size[0] * 2; //Radius to bounding box conversion
@@ -117,7 +128,7 @@ void urdfLink::setCylinder(std::string gazebo_radius,std::string gazebo_length,s
 {
     if(choose == "visual")
     {
-        stringToArray(currentVisual().cylinder_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_length);
+        stringToSizeArray(currentVisual().cylinder_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_length);
         urdfVisualOrCollision &visual = currentVisual();
 
         visual.cylinder_size[0] = visual.cylinder_size[0] * 2; //Radius to bounding box conversion
@@ -126,7 +137,7 @@ void urdfLink::setCylinder(std::string gazebo_radius,std::string gazebo_length,s
     }
     if(choose == "collision")
     {
-        stringToArray(currentCollision().cylinder_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_length);
+        stringToSizeArray(currentCollision().cylinder_size,gazebo_radius+" "+gazebo_radius+" "+gazebo_length);
         urdfVisualOrCollision &collision = currentCollision();
 
         collision.cylinder_size[0] = collision.cylinder_size[0] * 2; //Radius to bounding box conversion
@@ -237,7 +248,7 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
 }
 
 //Write
-void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool& showConvexDecompositionDlg)
+void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull)
 {
     std::string txt("simExtURDF: info: creating link '"+name+"'...");
     printToConsole(sim_verbosity_infos,txt.c_str());
@@ -249,12 +260,12 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         
         if(!visual.meshFilename.empty())
         {
-            std::string fname(visual.meshFilename);
+            std::string fname(strip(visual.meshFilename.c_str()));
             bool exists=true;
             bool useAlt=false;
             if (!simDoesFileExist(fname.c_str()))
             {
-                fname=visual.meshFilename_alt;
+                fname=strip(visual.meshFilename_alt.c_str());
                 exists=simDoesFileExist(fname.c_str());
                 useAlt=true;
             }
@@ -300,12 +311,12 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
         if(!collision.meshFilename.empty())
         {
-            std::string fname(collision.meshFilename);
+            std::string fname(strip(collision.meshFilename.c_str()));
             bool exists=true;
             bool useAlt=false;
             if (!simDoesFileExist(fname.c_str()))
             {
-                fname=collision.meshFilename_alt;
+                fname=strip(collision.meshFilename_alt.c_str());
                 exists=simDoesFileExist(fname.c_str());
                 useAlt=true;
             }
@@ -329,16 +340,44 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             else
             {
                 collision.n=scaleShapeIfRequired(collision.n,collision.mesh_scaling);
+
                 int p;
-                int convInts[5]={1,500,200,0,0}; // 3rd value from 100 to 500 on 5/2/2014
-                float convFloats[5]={100.0f,30.0f,0.25f,0.0f,0.0f};
-                if ( convexDecomposeNonConvexCollidables&&(simGetObjectIntParameter(collision.n,3017,&p)>0)&&(p==0) )
-                {
-                    int aux=1+4+8+16+64;
-                    if (showConvexDecompositionDlg)
-                        aux=1+2+8+16+64;
-                    showConvexDecompositionDlg=false;
-                    simConvexDecompose(collision.n,aux,convInts,convFloats); // we generate convex shapes!
+                simGetObjectIntParameter(collision.n,sim_shapeintparam_convex,&p);
+                if (p==0)
+                { // not convex
+                    if (convexHull)
+                    { // has precedence
+                        float* vertices;
+                        int verticesL;
+                        int* indices;
+                        int indicesL;
+                        simGetShapeMesh(collision.n,&vertices,&verticesL,&indices,&indicesL,nullptr);
+                        float tr[12];
+                        simGetObjectMatrix(collision.n,-1,tr);
+                        for (int i=0;i<verticesL/3;i++)
+                            simTransformVector(tr,vertices+3*i);
+                        float* vertices2;
+                        int vertices2L;
+                        int* indices2;
+                        int indices2L;
+                        simGetQHull(vertices,verticesL,&vertices2,&vertices2L,&indices2,&indices2L,0,nullptr);
+                        simReleaseBuffer((char*)vertices);
+                        simReleaseBuffer((char*)indices);
+                        int h=simCreateMeshShape(0,0.0f,vertices2,vertices2L,indices2,indices2L,nullptr);
+                        simReleaseBuffer((char*)vertices2);
+                        simReleaseBuffer((char*)indices2);
+                        simRemoveObject(collision.n);
+                        collision.n=h;
+                    }
+                    else
+                    {
+                        if (convexDecomposeNonConvexCollidables)
+                        {
+                            int convInts[5]={1,500,200,0,0}; // 3rd value from 100 to 500 on 5/2/2014
+                            float convFloats[5]={100.0f,30.0f,0.25f,0.0f,0.0f};
+                            simConvexDecompose(collision.n,1+4+8+16+64,convInts,convFloats); // we generate convex shapes!
+                        }
+                    }
                 }
                 simSetObjectIntParameter(collision.n,3003,!inertiaPresent); // we make it non-static if there is an inertia
                 simSetObjectIntParameter(collision.n,3004,1); // we make it respondable since it is a collision object
@@ -358,15 +397,17 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
     if (createVisualIfNone&&(visuals.size()==0))
     {
+        printf("No visuals: %s, cnt: %i\n",name.c_str(),collisions.size());
         if (collisions.size() > 0)
         { // We create a visual from the collision shapes
             for (it=collisions.begin(); it!=collisions.end(); it++) {
                 urdfVisualOrCollision &collision = *it;
-                simRemoveObjectFromSelection(sim_handle_all,-1);
-                simAddObjectToSelection(sim_handle_single,collision.n);
-                simCopyPasteSelectedObjects();
+                int newShape=collision.n;
+                simCopyPasteObjects(&newShape,1,2+4+8+32);
+                simSetObjectInt32Param(newShape,sim_shapeintparam_respondable,0);
+                simSetObjectInt32Param(newShape,sim_shapeintparam_static,0);
                 addVisual();
-                currentVisual().n = simGetObjectLastSelection();
+                currentVisual().n = newShape;
             }
         } else
         { // This is an empty link (no visual and no collision); create a dummy visual

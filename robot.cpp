@@ -3,7 +3,7 @@
 #include <string>
 
 
-robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
+robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
 {
     printToConsole(sim_verbosity_infos,"simExtURDF: info: import operation started.");
     if (filenameOrUrdf.compare(0, 5, "<?xml") == 0) {
@@ -12,10 +12,10 @@ robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,
         openFile(filenameOrUrdf);
     }
 
-    this->initRobotFromDoc(hideCollisionLinks, hideJoints, convexDecomposeNonConvexCollidables, createVisualIfNone, showConvexDecompositionDlg, centerAboveGround, makeModel, noSelfCollision, positionCtrl);
+    this->initRobotFromDoc(hideCollisionLinks, hideJoints, convexDecomposeNonConvexCollidables, createVisualIfNone, convexHull, centerAboveGround, makeModel, noSelfCollision, positionCtrl);
 }
 
-void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
+void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
 {
     robotElement = doc.FirstChildElement("robot");
     if(robotElement==nullptr)
@@ -31,7 +31,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     readLinks();
     readSensors();
     createJoints(hideJoints,positionCtrl);
-    createLinks(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,showConvexDecompositionDlg);
+    createLinks(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,convexHull);
     createSensors();
 
     std::vector<int> parentlessObjects;
@@ -702,88 +702,88 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
     }
 }
 
-void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool showConvexDecompositionDlg)
+void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull)
 {
-        std::string txt("simExtURDF: info: there are "+boost::lexical_cast<std::string>(vLinks.size())+" links.");
-        printToConsole(sim_verbosity_infos,txt.c_str());
-        for(size_t i = 0; i < vLinks.size() ; i++)
+    std::string txt("simExtURDF: info: there are "+boost::lexical_cast<std::string>(vLinks.size())+" links.");
+    printToConsole(sim_verbosity_infos,txt.c_str());
+    for(size_t i = 0; i < vLinks.size() ; i++)
+    {
+        urdfLink *Link = vLinks.at(i);
+        Link->createLink(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,convexHull);
+
+        // We attach the collision link to a joint. If the collision link isn't there, we use the visual link instead:
+
+        C7Vector linkInitialConf;
+        C7Vector linkDesiredConf;
+        int effectiveLinkHandle=-1;
+        if (Link->nLinkCollision!=-1)
         {
-            urdfLink *Link = vLinks.at(i);
-            Link->createLink(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,showConvexDecompositionDlg);
-
-            // We attach the collision link to a joint. If the collision link isn't there, we use the visual link instead:
-
-            C7Vector linkInitialConf;
-            C7Vector linkDesiredConf;
-            int effectiveLinkHandle=-1;
-            if (Link->nLinkCollision!=-1)
+            effectiveLinkHandle=Link->nLinkCollision;
+            // Collision object position and orientation is already set in the Link
+            float xyz[3] = {0,0,0};
+            float rpy[3] = {0,0,0};
+            linkDesiredConf.X.set(xyz);
+            linkDesiredConf.Q=getQuaternionFromRpy(rpy);
+        }
+        else
+        {
+            effectiveLinkHandle = Link->nLinkVisual;
+            if (effectiveLinkHandle != -1)
             {
-                effectiveLinkHandle=Link->nLinkCollision;
-                // Collision object position and orientation is already set in the Link
+                // Visual object position and orientation is already set in the Link
                 float xyz[3] = {0,0,0};
                 float rpy[3] = {0,0,0};
                 linkDesiredConf.X.set(xyz);
                 linkDesiredConf.Q=getQuaternionFromRpy(rpy);
             }
-            else
-            {
-                effectiveLinkHandle = Link->nLinkVisual;
-                if (effectiveLinkHandle != -1)
-                {
-                    // Visual object position and orientation is already set in the Link
-                    float xyz[3] = {0,0,0};
-                    float rpy[3] = {0,0,0};
-                    linkDesiredConf.X.set(xyz);
-                    linkDesiredConf.Q=getQuaternionFromRpy(rpy);
-                }
-            }
-            simGetObjectPosition(effectiveLinkHandle,-1,linkInitialConf.X.data);
-            C3Vector euler;
-            simGetObjectOrientation(effectiveLinkHandle,-1,euler.data);
-            linkInitialConf.Q.setEulerAngles(euler);
-
-            C7Vector trAbs(linkDesiredConf*linkInitialConf); // still local
-
-            if (Link->parent.size()>0)
-            {
-                int parentJointIndex=getJointPosition(Link->parent);
-                if( parentJointIndex!= -1)
-                {
-                    joint* Joint = vJoints.at(parentJointIndex);
-                    trAbs=Joint->jointBaseFrame*trAbs; // now absolute
-                }
-            }
-            
-
-
-            //set the transfrom matrix to the object
-            simSetObjectPosition(effectiveLinkHandle,-1,trAbs.X.data);
-            simSetObjectOrientation(effectiveLinkHandle,-1,trAbs.Q.getEulerAngles().data);
         }
+        simGetObjectPosition(effectiveLinkHandle,-1,linkInitialConf.X.data);
+        C3Vector euler;
+        simGetObjectOrientation(effectiveLinkHandle,-1,euler.data);
+        linkInitialConf.Q.setEulerAngles(euler);
 
-        // Finally the real parenting:
-        for(size_t i = 0; i < vJoints.size() ; i++)
+        C7Vector trAbs(linkDesiredConf*linkInitialConf); // still local
+
+        if (Link->parent.size()>0)
         {
-            int parentLinkIndex=getLinkPosition(vJoints.at(i)->parentLink);
-            if (parentLinkIndex!=-1)
+            int parentJointIndex=getJointPosition(Link->parent);
+            if( parentJointIndex!= -1)
             {
-                urdfLink* parentLink=vLinks[parentLinkIndex];
-                if (parentLink->nLinkCollision!=-1)
-                    simSetObjectParent(vJoints.at(i)->nJoint,parentLink->nLinkCollision,true);
-                else
-                    simSetObjectParent(vJoints.at(i)->nJoint,parentLink->nLinkVisual,true);
-            }
-
-            int childLinkIndex=getLinkPosition(vJoints.at(i)->childLink);
-            if (childLinkIndex!=-1)
-            {
-                urdfLink* childLink=vLinks[childLinkIndex];
-                if (childLink->nLinkCollision!=-1)
-                    simSetObjectParent(childLink->nLinkCollision,vJoints.at(i)->nJoint,true);
-                else
-                    simSetObjectParent(childLink->nLinkVisual,vJoints.at(i)->nJoint,true);
+                joint* Joint = vJoints.at(parentJointIndex);
+                trAbs=Joint->jointBaseFrame*trAbs; // now absolute
             }
         }
+
+
+
+        //set the transfrom matrix to the object
+        simSetObjectPosition(effectiveLinkHandle,-1,trAbs.X.data);
+        simSetObjectOrientation(effectiveLinkHandle,-1,trAbs.Q.getEulerAngles().data);
+    }
+
+    // Finally the real parenting:
+    for(size_t i = 0; i < vJoints.size() ; i++)
+    {
+        int parentLinkIndex=getLinkPosition(vJoints.at(i)->parentLink);
+        if (parentLinkIndex!=-1)
+        {
+            urdfLink* parentLink=vLinks[parentLinkIndex];
+            if (parentLink->nLinkCollision!=-1)
+                simSetObjectParent(vJoints.at(i)->nJoint,parentLink->nLinkCollision,true);
+            else
+                simSetObjectParent(vJoints.at(i)->nJoint,parentLink->nLinkVisual,true);
+        }
+
+        int childLinkIndex=getLinkPosition(vJoints.at(i)->childLink);
+        if (childLinkIndex!=-1)
+        {
+            urdfLink* childLink=vLinks[childLinkIndex];
+            if (childLink->nLinkCollision!=-1)
+                simSetObjectParent(childLink->nLinkCollision,vJoints.at(i)->nJoint,true);
+            else
+                simSetObjectParent(childLink->nLinkVisual,vJoints.at(i)->nJoint,true);
+        }
+    }
 }
 
 

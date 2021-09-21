@@ -3,9 +3,9 @@ function importURDF()
     local opts=0
     if not options.hideCollisionLinks then opts=opts+1 end
     if not options.hideJoints then opts=opts+2 end
-    if not options.convexDecompose then opts=opts+4 end
-    if not options.createVisualIfNone then opts=opts+8 end
-    if options.showConvexDecompositionDlg then opts=opts+16 end
+    if options.convexDecompose then opts=opts+4 end
+    if options.convexHull then opts=opts+512 end
+    if options.createVisualIfNone then opts=opts+8 end
     if not options.centerModel then opts=opts+32 end
     if not options.prepareModel then opts=opts+64 end
     if not options.alternateLocalRespondableMasks then opts=opts+128 end
@@ -42,22 +42,22 @@ function sysCall_init()
     closeDialog()
 
     optionsInfo={
-        [20]={name='Assign collision links to layer 9',key='hideCollisionLinks'},
-        [30]={name='Assign joints to layer 10',key='hideJoints'},
-        [40]={name='Convex decompose non-convex collision links',key='convexDecompose'},
-        [50]={name='Show convex decomposition dialog',key='showConvexDecompositionDlg'},
-        [60]={name='Create visual links if none',key='createVisualIfNone'},
-        [70]={name='Center model above ground',key='centerModel'},
-        [80]={name='Prepare model definition if feasible',key='prepareModel'},
-        [90]={name='Alternate local respondable masks',key='alternateLocalRespondableMasks'},
-        [100]={name='Enable position ctrl of joints',key='positionCtrl'},
+        [1]={name='Assign collision links to layer 9',key='hideCollisionLinks'},
+        [2]={name='Assign joints to layer 10',key='hideJoints'},
+        [3]={name='Convex hull of non-convex collision links',key='convexHull'},
+        [4]={name='Convex decompose non-convex collision links',key='convexDecompose'},
+        [5]={name='Create visual links if none',key='createVisualIfNone'},
+        [6]={name='Center model above ground',key='centerModel'},
+        [7]={name='Prepare model definition if feasible',key='prepareModel'},
+        [8]={name='Alternate local respondable masks',key='alternateLocalRespondableMasks'},
+        [9]={name='Enable position ctrl of joints',key='positionCtrl'},
     }
 
     options={
         hideCollisionLinks=true,
         hideJoints=true,
-        convexDecompose=true,
-        showConvexDecompositionDlg=false,
+        convexDecompose=false,
+        convexHull=false,
         createVisualIfNone=true,
         centerModel=true,
         prepareModel=true,
@@ -74,11 +74,11 @@ function sysCall_init()
         local function checkbox(id,text,varname)
         end
         local xml='<ui modal="true" layout="vbox" title="Importing '..fileName..'..." closeable="true" on-close="closeDialog">\n'
-        for id,o in pairs(optionsInfo) do
-            xml=xml..'<checkbox id="'..id..'" checked="'..(options[o.key] and 'true' or 'false')..'" text="'..o.name..'" on-change="updateOptions" />\n'
+        for i=1,#optionsInfo,1 do
+            local o=optionsInfo[i]
+            xml=xml..'<checkbox id="'..i..'" checked="'..(options[o.key] and 'true' or 'false')..'" text="'..o.name..'" on-change="updateOptions" />\n'
         end
         xml=xml..'<button text="Import" on-click="importURDF" />\n'
-        xml=xml..[[<label wordwrap="true" text="If you experience a sudden crash during the import operation, make sure to enable 'Show convex decomposition dialog' and adjust the parameters there. Another option would be to simply disable 'Convex decompose non-convex collision links'." />]]..'\n'
         xml=xml..'</ui>'
         ui=simUI.create(xml)
     end

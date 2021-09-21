@@ -11,6 +11,7 @@
 #endif
 
 void stringToArray(float array[],const std::string xyz);
+void stringToSizeArray(float array[],const std::string xyz);
 float getFloat(const std::string& text);
 int getInt(const std::string& text);
 bool isArrayEmpty(float arr[]);

@@ -47,7 +47,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         local geometryNode=exportFuncs.newNode{'geometry'}
         local r,pureType,dims=sim.getShapeGeomInfo(shapeHandle)
         local pure=(r&2)>0
-        local x,y,z=dims[1]*dims[4],dims[2]*dims[4],dims[3]*dims[4]
+        local x,y,z=dims[1],dims[2],dims[3]
         if pure and pureType==sim.pure_primitive_cuboid then
             local boxNode=exportFuncs.newNode{'box',size=string.format('%f %f %f',x,y,z)}
             table.insert(geometryNode,boxNode)
