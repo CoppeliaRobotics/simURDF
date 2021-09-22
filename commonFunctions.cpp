@@ -6,15 +6,7 @@
 
 void printToConsole(int verbosity,const char* txt)
 {
-    static int handle=-1;
     simAddLog("URDF",verbosity,txt);
-    std::string text(txt);
-    text+="\n";
-    if (simAuxiliaryConsolePrint(handle,text.c_str())<=0)
-    {
-        handle=simAuxiliaryConsoleOpen("URDF import",5000,2+4,nullptr,nullptr,nullptr,nullptr);
-        simAuxiliaryConsolePrint(handle,text.c_str());
-    }
 }
 
 void stringToArray(float array[],const std::string xyz)

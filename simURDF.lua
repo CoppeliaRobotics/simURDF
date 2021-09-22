@@ -162,11 +162,12 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         local visualNode=exportFuncs.newNode{'visual'}
         table.insert(visualNode,exportFuncs.getShapeOriginNode(exportFuncs,visualHandle,linkHandle))
         table.insert(visualNode,exportFuncs.getShapeGeometryNode(exportFuncs,visualHandle,baseName))
-        local materialNode=exportFuncs.newNode{'material',name=sim.getObjectAlias(visualHandle,3)..'_material'}
-        local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
-        local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
-        table.insert(materialNode,colorNode)
-        table.insert(visualNode,materialNode)
+        -- for now, do not specify color, since the collada exporter does not correctly handle compound shapes yet
+        --local materialNode=exportFuncs.newNode{'material',name=sim.getObjectAlias(visualHandle,3)..'_material'}
+        --local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
+        --local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
+        --table.insert(materialNode,colorNode)
+        --table.insert(visualNode,materialNode)
         return visualNode
     end
 
@@ -191,9 +192,9 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         elseif jointType==sim.joint_prismatic_subtype then
             return 'prismatic'
         elseif jointType==sim.joint_spherical_subtype then
-            error('spherical joints not supported by URDF')
+            return 'fixed'
         else
-            error('unknown joint type for '..sim.getObjectAlias(jointHandle,3))
+            return 'fixed'
         end
     end
 

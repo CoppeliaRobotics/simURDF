@@ -21,7 +21,7 @@ std::string rosPackageHelper::getPackageRootDir(std::string packageName)
     std::string rospackFind = std::string("rospack find ") + packageName;
     try {
         // execute the rospack
-        printToConsole(sim_verbosity_infos,rospackFind.c_str());
+        printToConsole(sim_verbosity_scriptinfos,rospackFind.c_str());
         std::string packagePath = exec(rospackFind.c_str());
 
         if (packagePath.length() > 0) {
@@ -31,19 +31,19 @@ std::string rosPackageHelper::getPackageRootDir(std::string packageName)
                 packagePathLastComponentPos = packagePath.find_last_of("/", packagePath.length()-1);
 
             std::string packageRootDir = packagePath.substr(0, packagePathLastComponentPos);
-            printToConsole(sim_verbosity_infos,(
-                std::string("simExtURDF: info: package root for ") + packageName + std::string(" is ") + packageRootDir
+            printToConsole(sim_verbosity_scriptinfos,(
+                std::string("package root for ") + packageName + std::string(" is ") + packageRootDir
             ).c_str());
 
             // save the found root dir to the cache
             rospackCache[packageName] = packageRootDir;
             return packageRootDir;
         } else {
-            printToConsole(sim_verbosity_warnings,"simExtURDF: warning: rospack returned empty package path.");
+            printToConsole(sim_verbosity_scriptwarnings,"rospack returned empty package path.");
             return std::string("");
         }
     } catch (std::runtime_error& e) {
-        printToConsole(sim_verbosity_errors,(std::string("simExtURDF: error: rospack failed: ") + std::string(e.what())).c_str());
+        printToConsole(sim_verbosity_scripterrors,(std::string("rospack failed: ") + std::string(e.what())).c_str());
         return std::string("");
     }
 }
