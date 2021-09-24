@@ -66,14 +66,14 @@ function sysCall_init()
     }
 
     local scenePath=sim.getStringParameter(sim.stringparam_scene_path)
-    local fileName=sim.fileDialog(sim.filedlg_type_load,'Import URDF...',scenePath,'','URDF file','urdf')
+    local fileName=simUI.fileDialog(simUI.filedialog_type.load,"Import URDF...",scenePath,"","URDF file","urdf",true)
 
-    if fileName then
+    if fileName and #fileName==1 then
         done=false
-        options.fileName=fileName
+        options.fileName=fileName[1]
         local function checkbox(id,text,varname)
         end
-        local xml='<ui modal="true" layout="vbox" title="Importing '..fileName..'..." closeable="true" on-close="closeDialog">\n'
+        local xml='<ui modal="true" layout="vbox" title="Importing '..fileName[1]..'..." closeable="true" on-close="closeDialog">\n'
         for i=1,#optionsInfo,1 do
             local o=optionsInfo[i]
             xml=xml..'<checkbox id="'..i..'" checked="'..(options[o.key] and 'true' or 'false')..'" text="'..o.name..'" on-change="updateOptions" />\n'

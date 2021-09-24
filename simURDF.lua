@@ -11,6 +11,160 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     end
     outputMode=outputMode or 'file'
     exportFuncs=exportFuncs or {}
+    
+    function exportFuncs.createSimplifiedModel(originalModel)
+        local modelCopy=sim.copyPasteObjects({originalModel},1+2+4+8+16+32)[1]
+        
+        local function transferChildren(objectHandle,newParentHandle)
+            local c=sim.getObjectChild(objectHandle,0)
+            while c>=0 do
+                sim.setObjectParent(c,newParentHandle,true)
+                c=sim.getObjectChild(objectHandle,0)
+            end
+        end
+        
+        -- Remove invisible models:
+        local l=sim.getObjectsInTree(modelCopy)
+        for i=1,#l,1 do
+            if sim.isHandle(l[i]) then
+                if sim.getModelProperty(l[i])&(sim.modelproperty_not_model|sim.modelproperty_not_visible)==sim.modelproperty_not_visible then
+                    sim.removeModel(l[i])
+                end
+            end
+        end
+
+        -- Remove objects that can't be exported to URDF:
+        local l=sim.getObjectsInTree(modelCopy)
+        for i=1,#l,1 do
+            local t=sim.getObjectType(l[i])
+            if t~=sim.object_shape_type and t~=sim.object_joint_type and t~=sim.object_forcesensor_type then
+                sim.removeObject(l[i])
+            end
+        end
+
+        local stayInLoop=true
+        while stayInLoop do
+            stayInLoop=false
+            -- Check all joints that do not have a shape as a parent. Insert an aux shape in that case
+            local l=sim.getObjectsInTree(modelCopy)
+            for i=1,#l,1 do
+                local h=l[i]
+                local t=sim.getObjectType(h)
+                if t==sim.object_joint_type or t==sim.object_forcesensor_type then
+                    local parent=sim.getObjectParent(h)
+                    if sim.getObjectType(parent)~=sim.object_shape_type then
+                        -- add an auxiliary static shape
+                        local auxShape=sim.createPureShape(1,16,{0.005,0.005,0.005},0.1)
+                        sim.setObjectPose(auxShape,parent,{0,0,0,0,0,0,1})
+                        sim.setObjectParent(h,auxShape,true)
+                        sim.setObjectParent(auxShape,parent,true)
+                    end
+                end
+            end
+            
+            -- Check all joints that have more than one direct shape child. Group visible shapes in that case, and erase the other:
+            local l=sim.getObjectsInTree(modelCopy)
+            for i=1,#l,1 do
+                local h=l[i]
+                if sim.isHandle(h) then
+                    local t=sim.getObjectType(h)
+                    if t==sim.object_joint_type or t==sim.object_forcesensor_type then
+                        local l1=sim.getObjectsInTree(h,sim.object_shape_type,1+2)
+                        if #l1>1 then
+                            local j=1
+                            while j<=#l1 do
+                                local l2=sim.getObjectsInTree(l1[j],sim.object_shape_type,1+2)
+                                for j=1,#l2,1 do
+                                    l1[#l1+1]=l2[j]
+                                end
+                                j=j+1
+                            end
+                            local toGroup={}
+                            local toRemove={}
+                            for j=1,#l1,1 do
+                                if sim.getObjectInt32Param(l1[j],sim.objintparam_visible)~=0 then
+                                    toGroup[#toGroup+1]=l1[j]
+                                else
+                                    toRemove[#toRemove+1]=l1[j]
+                                end
+                            end
+                            for j=2,#toGroup,1 do
+                                transferChildren(toGroup[j],toGroup[1])
+                            end
+                            if #toGroup>1 then
+                                local m=toGroup[1]
+                                table.remove(toGroup,1)
+                                toGroup[#toGroup+1]=m
+                                sim.groupShapes(toGroup)
+                                for j=1,#toRemove,1 do
+                                    transferChildren(toRemove[j],m)
+                                end
+                            else
+                                stayInLoop=true -- we might again have two consecutive joints
+                            end
+                            for j=1,#toRemove,1 do
+                                sim.removeObject(toRemove[j])
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Now we group all visuals:
+        local l=sim.getObjectsInTree(modelCopy)
+        for i=1,#l,1 do
+            local h=l[i]
+            if sim.isHandle(h) then
+                local t=sim.getObjectType(h)
+                local parent=sim.getObjectParent(h)
+                if t==sim.object_shape_type and (parent==-1 or sim.getObjectType(parent)~=sim.object_shape_type)  then
+                    local l1=sim.getObjectsInTree(h,sim.object_shape_type,1+2)
+                    local j=1
+                    while j<=#l1 do
+                        local l2=sim.getObjectsInTree(l1[j],sim.object_shape_type,1+2)
+                        for j=1,#l2,1 do
+                            l1[#l1+1]=l2[j]
+                        end
+                        j=j+1
+                    end
+                    
+
+                    local toGroup={}
+                    local toRemove={}
+                    for j=1,#l1,1 do
+                        if sim.getObjectInt32Param(l1[j],sim.objintparam_visible)~=0 then
+                            toGroup[#toGroup+1]=l1[j]
+                        else
+                            toRemove[#toRemove+1]=l1[j]
+                        end
+                    end
+                    for j=2,#toGroup,1 do
+                        transferChildren(toGroup[j],toGroup[1])
+                    end
+                    if #toGroup>1 then
+                        local m=toGroup[1]
+                        table.remove(toGroup,1)
+                        toGroup[#toGroup+1]=m
+                        sim.groupShapes(toGroup)
+                        for j=1,#toRemove,1 do
+                            transferChildren(toRemove[j],m)
+                        end
+                        if sim.getObjectInt32Param(h,sim.shapeintparam_static)~=0 and (sim.getObjectInt32Param(h,sim.shapeintparam_respondable)==0 or sim.getObjectInt32Param(h,sim.objintparam_visible)~=0) then
+                            transferChildren(m,h)
+                            sim.groupShapes({m,h})
+                        end
+                    end
+                    for j=1,#toRemove,1 do
+                        sim.removeObject(toRemove[j])
+                    end
+                end
+            end
+        end
+        
+        sim.setModelProperty(modelCopy,0)
+        return modelCopy
+    end
 
     exportFuncs.newNode=exportFuncs.newNode or function(t)
         assert(type(t)=='table','bad type')
@@ -162,12 +316,11 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         local visualNode=exportFuncs.newNode{'visual'}
         table.insert(visualNode,exportFuncs.getShapeOriginNode(exportFuncs,visualHandle,linkHandle))
         table.insert(visualNode,exportFuncs.getShapeGeometryNode(exportFuncs,visualHandle,baseName))
-        -- for now, do not specify color, since the collada exporter does not correctly handle compound shapes yet
-        --local materialNode=exportFuncs.newNode{'material',name=sim.getObjectAlias(visualHandle,3)..'_material'}
-        --local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
-        --local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
-        --table.insert(materialNode,colorNode)
-        --table.insert(visualNode,materialNode)
+        local materialNode=exportFuncs.newNode{'material',name=sim.getObjectAlias(visualHandle,3)..'_material'}
+        local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
+        local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
+        table.insert(materialNode,colorNode)
+        table.insert(visualNode,materialNode)
         return visualNode
     end
 
@@ -272,7 +425,9 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     end
 
     if outputMode=='f' then return exportFuncs end
-    local tree=exportFuncs.getRobotNode(exportFuncs,modelHandle,baseName)
+    local simplifiedModel=exportFuncs.createSimplifiedModel(modelHandle)
+    local tree=exportFuncs.getRobotNode(exportFuncs,simplifiedModel,baseName)
+    sim.removeModel(simplifiedModel)
     if outputMode=='tree' then return tree end
     local xml=exportFuncs.toXML(exportFuncs,tree)
     if outputMode=='string' then return xml end
