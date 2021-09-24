@@ -65,10 +65,11 @@ function sysCall_init()
         positionCtrl=true,
     }
 
-    local scenePath=sim.getStringParameter(sim.stringparam_scene_path)
-    local fileName=simUI.fileDialog(simUI.filedialog_type.load,"Import URDF...",scenePath,"","URDF file","urdf",true)
+    local importExportDir=sim.getStringParam(sim.stringparam_importexportdir)
+    local fileName=simUI.fileDialog(simUI.filedialog_type.load,"Import URDF...",importExportDir,"","URDF file","urdf",true)
 
-    if fileName and #fileName==1 then
+    if fileName and #fileName==1 and #fileName[1]>0 then
+        sim.setStringParam(sim.stringparam_importexportdir,fileName[1])
         done=false
         options.fileName=fileName[1]
         local function checkbox(id,text,varname)

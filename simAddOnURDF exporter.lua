@@ -13,9 +13,10 @@ end
 function action()
     local model=selectedModel
     hideDlg()
-    local scenePath=sim.getStringParameter(sim.stringparam_scene_path)
-    local file=simUI.fileDialog(simUI.filedialog_type.save,"Export URDF...",scenePath,"","URDF file","urdf",true)
+    local importExportDir=sim.getStringParam(sim.stringparam_importexportdir)
+    local file=simUI.fileDialog(simUI.filedialog_type.save,"Export URDF...",importExportDir,"","URDF file","urdf",true)
     if file and #file==1 and #file[1]>0 then
+        sim.setStringParam(sim.stringparam_importexportdir,file[1])
         simURDF.export(model,file[1])
         sim.addLog(sim.verbosity_scriptinfos,"Model successfully exported to "..file[1])
         sim.setObjectSelection({})
