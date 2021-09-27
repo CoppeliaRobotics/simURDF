@@ -40,6 +40,7 @@ coppeliasim_add_plugin(
 )
 target_include_directories(simExtURDF PRIVATE ${COPPELIASIM_ROOT_DIR}/programming/simMath)
 coppeliasim_add_addon("simAddOnURDF importer.lua")
+coppeliasim_add_addon("simAddOnURDF exporter.lua")
 coppeliasim_add_lua(simURDF.lua)
 coppeliasim_add_helpfile(simURDF.htm)
 coppeliasim_add_helpfile(simURDF.json SUBDIR index)
