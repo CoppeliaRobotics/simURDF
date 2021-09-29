@@ -35,7 +35,7 @@ function updateOptions(ui,id,val)
 end
 
 function sysCall_info()
-    return {autoStart=false}
+    return {autoStart=false,menu='Importers//URDF importer'}
 end
 
 function sysCall_init()

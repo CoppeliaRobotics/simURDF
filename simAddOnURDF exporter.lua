@@ -1,5 +1,5 @@
 function sysCall_info()
-    return {autoStart=false}
+    return {autoStart=false,menu='Exporters//URDF exporter'}
 end
 
 function sysCall_addOnScriptSuspend()
