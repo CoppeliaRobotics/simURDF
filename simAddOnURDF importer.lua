@@ -1,39 +1,3 @@
-function importURDF()
-    local fn=options.fileName
-    local opts=0
-    if not options.hideCollisionLinks then opts=opts+1 end
-    if not options.hideJoints then opts=opts+2 end
-    if options.convexDecompose then opts=opts+4 end
-    if options.convexHull then opts=opts+512 end
-    if options.createVisualIfNone then opts=opts+8 end
-    if not options.centerModel then opts=opts+32 end
-    if not options.prepareModel then opts=opts+64 end
-    if not options.alternateLocalRespondableMasks then opts=opts+128 end
-    if not options.positionCtrl then opts=opts+256 end
-    local success,err=pcall(function() simURDF.import(fn,opts) end)
-    if err then
-        simUI.msgBox(simUI.msgbox_type.info,simUI.msgbox_buttons.ok,'Error','Error: '..err)
-    end
-    closeDialog()
-end
-
-function closeDialog()
-    if ui then
-        simUI.destroy(ui)
-        ui=nil
-    end
-    done=true
-end
-
-function updateOptions(ui,id,val)
-    local function val2bool(v)
-        if v==0 then return false else return true end
-    end
-    if optionsInfo[id] then
-        options[optionsInfo[id].key]=val2bool(val)
-    end
-end
-
 function sysCall_info()
     return {autoStart=false,menu='Importers//URDF importer'}
 end
@@ -79,6 +43,8 @@ function sysCall_init()
             local o=optionsInfo[i]
             xml=xml..'<checkbox id="'..i..'" checked="'..(options[o.key] and 'true' or 'false')..'" text="'..o.name..'" on-change="updateOptions" />\n'
         end
+        xml=xml..[[<label text="replace occurences of 'package://' with:"/>]]
+        xml=xml..'<edit on-editing-finished="editFinished_callback" id="999" />'
         xml=xml..'<button text="Import" on-click="importURDF" />\n'
         xml=xml..'</ui>'
         ui=simUI.create(xml)
@@ -94,3 +60,42 @@ end
 function sysCall_cleanup()
     closeDialog()
 end
+
+function importURDF()
+    local fn=options.fileName
+    local opts=0
+    if not options.hideCollisionLinks then opts=opts+1 end
+    if not options.hideJoints then opts=opts+2 end
+    if options.convexDecompose then opts=opts+4 end
+    if options.convexHull then opts=opts+512 end
+    if options.createVisualIfNone then opts=opts+8 end
+    if not options.centerModel then opts=opts+32 end
+    if not options.prepareModel then opts=opts+64 end
+    if not options.alternateLocalRespondableMasks then opts=opts+128 end
+    if not options.positionCtrl then opts=opts+256 end
+    closeDialog()
+    pcall(function() simURDF.import(fn,opts,packageStr) end)
+end
+
+function closeDialog()
+    if ui then
+        simUI.destroy(ui)
+        ui=nil
+    end
+    done=true
+end
+
+function editFinished_callback(ui,id,val)
+    packageStr=val
+end
+
+function updateOptions(ui,id,val)
+    local function val2bool(v)
+        if v==0 then return false else return true end
+    end
+    if optionsInfo[id] then
+        options[optionsInfo[id].key]=val2bool(val)
+    end
+end
+
+

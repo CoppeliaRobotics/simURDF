@@ -18,7 +18,7 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define PLUGIN_VERSION 13   // 1 until 20/1/2013 (1 was a very early beta)
+#define PLUGIN_VERSION 14   // 1 until 20/1/2013 (1 was a very early beta)
                             // 2 until 10/1/2014 (CoppeliaSim3.0.5)
                             // 3: new lock
                             // 4: since CoppeliaSim 3.1.2
@@ -31,33 +31,36 @@
                             // 11: using simSetShapeInertia and simSetShapeMass instead of simSetShapeMassAndInertia (since CoppeliaSim 4.1.0 rev2)
                             // 12: Urdf --> URDF
                             // 13: removed C++ UI, now provided via add-on
+                            // 14: various rework and bug fix
 
 static LIBRARY simLib;
 
 const int inArgs_IMPORT[]={
-    2,
+    3,
     sim_script_arg_string,0, // filenameAndPath or URDF contents
     sim_script_arg_int32,0, // options
+    sim_script_arg_string,0, // op. replacement string for 'package://'
 };
 
 void simImportUrdfCallback(SScriptCallBack* p)
 {
     CScriptFunctionData D;
-    if (D.readDataFromStack(p->stackID,inArgs_IMPORT,inArgs_IMPORT[0]-1,"simURDF.import"))
+    if (D.readDataFromStack(p->stackID,inArgs_IMPORT,inArgs_IMPORT[0]-2,"simURDF.import"))
     {
         std::vector<CScriptFunctionDataItem>* inData=D.getInDataPtr();
         int options=0;
         if ( (inData->size()>=2)&&(inData->at(1).int32Data.size()==1) )
             options=inData->at(1).int32Data[0];
-
-        robot Robot(inData->at(0).stringData[0].c_str(), (options&1)==0, (options&2)==0,options&4,options&8,options&512,(options&32)==0,(options&64)==0,(options&128)==0,(options&256)==0);
-
+        std::string packageStr;
+        if ( (inData->size()>=3)&&(inData->at(2).stringData.size()==1) )
+            packageStr=inData->at(2).stringData[0];
+        robot Robot(inData->at(0).stringData[0].c_str(), (options&1)==0, (options&2)==0,options&4,options&8,options&512,(options&32)==0,(options&64)==0,(options&128)==0,(options&256)==0,packageStr.c_str());
         simChar* name = (simChar*)simCreateBuffer(Robot.name.length()+1);
         memcpy((void*) name, (void*) Robot.name.c_str(), Robot.name.length()+1);
         D.pushOutData(CScriptFunctionDataItem(name));
         simReleaseBuffer(name);
+        D.writeDataToStack(p->stackID);
     }
-    D.writeDataToStack(p->stackID);
 }
 
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
@@ -94,7 +97,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 
     simRegisterScriptVariable("simURDF","require('simURDF')",0);
 
-    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0)",simImportUrdfCallback);
+    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0,string packageStrReplace=nil)",simImportUrdfCallback);
     simRegisterScriptCallbackFunction("simURDF.importFile@URDF","string robot_name=simURDF.importFile(string fileAndPath,int options=0)",simImportUrdfCallback);
 
     // Following for backward compatibility:

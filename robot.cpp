@@ -3,7 +3,7 @@
 #include <string>
 
 
-robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
+robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr)
 {
     if (filenameOrUrdf.compare(0, 5, "<?xml") == 0) {
         openString(filenameOrUrdf);
@@ -11,10 +11,10 @@ robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,
         openFile(filenameOrUrdf);
     }
 
-    this->initRobotFromDoc(hideCollisionLinks, hideJoints, convexDecomposeNonConvexCollidables, createVisualIfNone, convexHull, centerAboveGround, makeModel, noSelfCollision, positionCtrl);
+    this->initRobotFromDoc(hideCollisionLinks, hideJoints, convexDecomposeNonConvexCollidables, createVisualIfNone, convexHull, centerAboveGround, makeModel, noSelfCollision, positionCtrl,packageReplaceStr);
 }
 
-void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl)
+void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr)
 {
     robotElement = doc.FirstChildElement("robot");
     if(robotElement==nullptr)
@@ -27,7 +27,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     name=robotElement->Attribute("name");
 
     readJoints();
-    readLinks();
+    readLinks(packageReplaceStr);
     readSensors();
 
     std::string txt("there are "+boost::lexical_cast<std::string>(vJoints.size())+" joints.");
@@ -292,7 +292,7 @@ void robot::readJoints()
     }
 }
 
-void robot::readLinks()
+void robot::readLinks(const char* packageReplaceStr)
 {
     simExtUrdf::tinyxml2::XMLElement* linkElement =  robotElement->FirstChildElement("link");
     while (linkElement)
@@ -357,7 +357,7 @@ void robot::readLinks()
                 if(visual_geometry_meshElement!=nullptr)
                 {
                     if (visual_geometry_meshElement->Attribute("filename") != nullptr)
-                        Link->setMeshFilename(packagePath,visual_geometry_meshElement->Attribute("filename"),"visual");
+                        Link->setMeshFilename(packagePath,visual_geometry_meshElement->Attribute("filename"),"visual",packageReplaceStr);
                     if (visual_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentVisual().mesh_scaling,visual_geometry_meshElement->Attribute("scale"));
                 }
@@ -414,7 +414,7 @@ void robot::readLinks()
                 if(collision_geometry_meshElement!=nullptr)
                 {
                     if (collision_geometry_meshElement->Attribute("filename") != nullptr)
-                        Link->setMeshFilename(packagePath,collision_geometry_meshElement->Attribute("filename"),"collision");
+                        Link->setMeshFilename(packagePath,collision_geometry_meshElement->Attribute("filename"),"collision",packageReplaceStr);
                     if (collision_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentCollision().mesh_scaling,collision_geometry_meshElement->Attribute("scale"));
                 }

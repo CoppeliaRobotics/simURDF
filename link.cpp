@@ -178,8 +178,10 @@ void urdfLink::verifyInertia()
     }
 }
 
-void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose)
+void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr)
 {
+    if (strlen(packageReplaceStr)>0)
+        meshFilename.replace(meshFilename.find("package://"),strlen("package://"),packageReplaceStr);
     std::string meshFilename_alt; // we use an alternative filename... the package location is somewhat strangely defined sometimes!!
 #ifndef WIN_SIM
     if (meshFilename.compare(0,10,"package://")==0) // condition added by Marc on 17/1/2014
