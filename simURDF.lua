@@ -54,7 +54,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
                     local parent=sim.getObjectParent(h)
                     if sim.getObjectType(parent)~=sim.object_shape_type then
                         -- add an auxiliary static shape
-                        local auxShape=sim.createPureShape(1,16,{0.005,0.005,0.005},0.1)
+                        local auxShape=sim.createPrimitiveShape(sim.primitiveshape_sphere,{0.005,0.005,0.005})
                         sim.setObjectPose(auxShape,parent,{0,0,0,0,0,0,1})
                         sim.setObjectParent(h,auxShape,true)
                         sim.setObjectParent(auxShape,parent,true)
