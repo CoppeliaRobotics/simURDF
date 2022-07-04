@@ -300,11 +300,11 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 visual.n = scaleShapeIfRequired(visual.n,visual.mesh_scaling);
         }
         else if (!isArrayEmpty(visual.sphere_size))
-            visual.n = simCreatePureShape( 1,1+2+16, visual.sphere_size, mass, nullptr);
+            visual.n = simCreatePureShape( 1,1+16, visual.sphere_size, mass, nullptr);
         else if (!isArrayEmpty(visual.cylinder_size))
-            visual.n = simCreatePureShape( 2,1+2+16, visual.cylinder_size, mass, nullptr);
+            visual.n = simCreatePureShape( 2,1+16, visual.cylinder_size, mass, nullptr);
         else if (!isArrayEmpty(visual.box_size))
-            visual.n = simCreatePureShape( 0,1+2+16, visual.box_size, mass, nullptr);
+            visual.n = simCreatePureShape( 0,1+16, visual.box_size, mass, nullptr);
     }
 
     //collisions
@@ -609,7 +609,7 @@ int urdfLink::scaleShapeIfRequired(int shapeHandle,float scalingFactors[3])
         }
         // Remove the old shape and create a new one with the scaled data:
         simRemoveObject(shapeHandle);
-        newShapeHandle=simCreateMeshShape(2,20.0f*piValue/180.0f,vertices,verticesSize,indices,indicesSize,nullptr);
+        newShapeHandle=simCreateMeshShape(0,20.0f*piValue/180.0f,vertices,verticesSize,indices,indicesSize,nullptr);
         simReleaseBuffer((char*)vertices);
         simReleaseBuffer((char*)indices);
     }
