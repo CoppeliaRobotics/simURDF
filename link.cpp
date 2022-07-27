@@ -21,8 +21,6 @@ urdfVisualOrCollision::urdfVisualOrCollision()
 std::string strip(const char* filename)
 {
     std::string f(filename);
-    for (size_t i=0;i<f.size();i++)
-        f[i]=std::tolower(f[i]);
     size_t p=f.find("file://");
     if (p!=std::string::npos)
         f=f.substr(7);
