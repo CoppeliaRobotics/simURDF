@@ -441,7 +441,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             }
 
             C7Vector frame;
-            frame.X.set(visual.xyz);
+            frame.X.setData(visual.xyz);
             frame.Q=getQuaternionFromRpy(visual.rpy);
 
             C7Vector initVisualFrame;
@@ -472,7 +472,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         urdfVisualOrCollision &collision = collisions[i];
         if (collision.n!=-1) {
             C7Vector frame;
-            frame.X.set(collision.xyz);
+            frame.X.setData(collision.xyz);
             frame.Q=getQuaternionFromRpy(collision.rpy);
 
             C7Vector initCollisionFrame;
@@ -500,7 +500,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     if (inertiaPresent)
     {
         C7Vector inertiaFrame;
-        inertiaFrame.X.set(inertial_xyz);
+        inertiaFrame.X.setData(inertial_xyz);
         inertiaFrame.Q=getQuaternionFromRpy(inertial_rpy);
 
 #if SIM_PROGRAM_VERSION_NB_FULL<4010002

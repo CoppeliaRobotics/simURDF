@@ -574,7 +574,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         //Move the joints to the positions specifieds by the urdf file
         C7Vector tmp;
         tmp.setIdentity();
-        tmp.X.set(vJoints.at(i)->origin_xyz);
+        tmp.X.setData(vJoints.at(i)->origin_xyz);
         tmp.Q=getQuaternionFromRpy(vJoints.at(i)->origin_rpy);
         vJoints.at(i)->jointBaseFrame=vJoints.at(i)->jointBaseFrame*tmp;
 
@@ -725,7 +725,7 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
             // Collision object position and orientation is already set in the Link
             float xyz[3] = {0,0,0};
             float rpy[3] = {0,0,0};
-            linkDesiredConf.X.set(xyz);
+            linkDesiredConf.X.setData(xyz);
             linkDesiredConf.Q=getQuaternionFromRpy(rpy);
         }
         else
@@ -736,7 +736,7 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
                 // Visual object position and orientation is already set in the Link
                 float xyz[3] = {0,0,0};
                 float rpy[3] = {0,0,0};
-                linkDesiredConf.X.set(xyz);
+                linkDesiredConf.X.setData(xyz);
                 linkDesiredConf.Q=getQuaternionFromRpy(rpy);
             }
         }
@@ -830,7 +830,7 @@ void robot::createSensors()
 
                 // Find the local configuration:
                 C7Vector sensorLocal;
-                sensorLocal.X.set(Sensor->origin_xyz);
+                sensorLocal.X.setData(Sensor->origin_xyz);
                 sensorLocal.Q=getQuaternionFromRpy(Sensor->origin_rpy);
                 C4Vector rot(0.0f,0.0f,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
                 sensorLocal.Q=sensorLocal.Q*rot;

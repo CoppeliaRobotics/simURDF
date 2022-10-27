@@ -62,6 +62,7 @@ SOURCES += \
     ../simMath/3X3Matrix.cpp \
     ../simMath/4Vector.cpp \
     ../simMath/4X4Matrix.cpp \
+    ../simMath/MMatrix.cpp \
     ../simMath/7Vector.cpp \
     ../simMath/MyMath.cpp \
     ../common/simLib.cpp \
@@ -81,6 +82,7 @@ HEADERS +=\
     ../simMath/3X3Matrix.h \
     ../simMath/4Vector.h \
     ../simMath/4X4Matrix.h \
+    ../simMath/MMatrix.h \
     ../simMath/7Vector.h \
     ../simMath/MyMath.h \
     ../include/simLib.h \
