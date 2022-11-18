@@ -429,7 +429,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
 
     // Grouping visuals
     const float specular[3]={0.2f,0.2f,0.2f};
-    simInt *shapes = new simInt[visuals.size()];
+    int *shapes = new int[visuals.size()];
     int validShapes = 0;
     for (unsigned int i=0; i<visuals.size(); i++) {
         urdfVisualOrCollision &visual = visuals[i];
@@ -466,7 +466,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     }
 
     // Grouping collisions
-    shapes = new simInt[collisions.size()];
+    shapes = new int[collisions.size()];
     validShapes = 0;
     for (unsigned int i=0; i<collisions.size(); i++) {
         urdfVisualOrCollision &collision = collisions[i];

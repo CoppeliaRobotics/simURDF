@@ -22,8 +22,8 @@ public:
 
     bool gazeboSpec;
 
-    simInt nSensor;
-    simInt nSensorAux;
+    int nSensor;
+    int nSensorAux;
     std::string name;
 
     std::string parentLink;

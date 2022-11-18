@@ -36,10 +36,10 @@ class urdfVisualOrCollision
 
         std::string meshFilename;
         std::string meshFilename_alt;
-        simInt meshExtension;
+        int meshExtension;
 
         // The simulator identifier
-        simInt n;
+        int n;
 };
 
 class urdfLink
@@ -65,13 +65,13 @@ public:
 
     //This variables does not came from the urdf.
     std::string parent;
-    simInt nParent;
+    int nParent;
 
     std::string child;
-    simInt nChild;
+    int nChild;
 
-    simInt nLinkVisual;
-    simInt nLinkCollision;
+    int nLinkVisual;
+    int nLinkCollision;
     
     //Functions
     urdfLink();

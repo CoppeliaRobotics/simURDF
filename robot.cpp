@@ -647,8 +647,8 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
             int parentJointIndex=getJointPosition(vJoints.at(i)->parentJoint);
             if ( parentJointIndex!= -1)
             {
-                simInt nParentJoint = vJoints.at(parentJointIndex)->nJoint;
-                simInt nJoint = vJoints.at(i)->nJoint;
+                int nParentJoint = vJoints.at(parentJointIndex)->nJoint;
+                int nJoint = vJoints.at(i)->nJoint;
                 simSetObjectParent(nJoint,nParentJoint,false);
             }
         }
@@ -664,7 +664,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         tmp.M.setEulerAngles(euler);
         vJoints.at(i)->jointBaseFrame = tmp;
 
-        simInt nJoint = vJoints.at(i)->nJoint;
+        int nJoint = vJoints.at(i)->nJoint;
         simSetObjectParent(nJoint,-1,true);
     }
 

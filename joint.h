@@ -24,9 +24,9 @@ public:
 
     C7Vector jointBaseFrame;
 
-    simInt nJoint;
+    int nJoint;
     std::string name;
-    simInt jointType;
+    int jointType;
 
     std::string parentJoint;
     std::string parentLink;

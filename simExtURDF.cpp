@@ -55,7 +55,7 @@ void simImportUrdfCallback(SScriptCallBack* p)
         if ( (inData->size()>=3)&&(inData->at(2).stringData.size()==1) )
             packageStr=inData->at(2).stringData[0];
         robot Robot(inData->at(0).stringData[0].c_str(), (options&1)==0, (options&2)==0,options&4,options&8,options&512,(options&32)==0,(options&64)==0,(options&128)==0,(options&256)==0,packageStr.c_str());
-        simChar* name = (simChar*)simCreateBuffer(Robot.name.length()+1);
+        char* name = (char*)simCreateBuffer(Robot.name.length()+1);
         memcpy((void*) name, (void*) Robot.name.c_str(), Robot.name.length()+1);
         D.pushOutData(CScriptFunctionDataItem(name));
         simReleaseBuffer(name);
