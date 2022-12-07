@@ -11,8 +11,8 @@ sensor::sensor()
      resolution[0]=256;
      resolution[1]=256;
 
-     clippingPlanes[0]=0.01f;
-     clippingPlanes[1]=2.0f;
+     clippingPlanes[0]=0.01;
+     clippingPlanes[1]=2.0;
 
      cameraSensorPresent=false;
      proximitySensorPresent=false;

@@ -11,11 +11,11 @@ class sensor
 {
 public:
     //Variables
-    float origin_xyz[3];
-    float origin_rpy[3];
+    double origin_xyz[3];
+    double origin_rpy[3];
 
-    float resolution[2];
-    float clippingPlanes[2];
+    double resolution[2];
+    double clippingPlanes[2];
 
     bool cameraSensorPresent;
     bool proximitySensorPresent;

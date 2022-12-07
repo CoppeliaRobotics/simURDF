@@ -11,16 +11,16 @@ class joint
 {
 public:
     //Variables
-    float origin_xyz[3];
-    float origin_rpy[3];
-    float axis[3];
-    float lowerLimit;
-    float upperLimit;
+    double origin_xyz[3];
+    double origin_rpy[3];
+    double axis[3];
+    double lowerLimit;
+    double upperLimit;
     bool jointLimitsSpecified;
-    float effortLimitAngular;
-    float effortLimitLinear;
-    float velocityLimitAngular;
-    float velocityLimitLinear;
+    double effortLimitAngular;
+    double effortLimitLinear;
+    double velocityLimitAngular;
+    double velocityLimitLinear;
 
     C7Vector jointBaseFrame;
 

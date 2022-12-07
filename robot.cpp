@@ -98,7 +98,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
         C3Vector minV,maxV;
         for (int shNb=0;shNb<int(allShapes.size());shNb++)
         {
-            float* vertices;
+            double* vertices;
             int verticesSize;
             int* indices;
             int indicesSize;
@@ -130,8 +130,8 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
             }
         }
 
-        C3Vector shiftAmount((minV+maxV)*-0.5f);
-        shiftAmount(2)+=(maxV(2)-minV(2))*0.5f;
+        C3Vector shiftAmount((minV+maxV)*-0.5);
+        shiftAmount(2)+=(maxV(2)-minV(2))*0.5;
         for (int i=0;i<int(parentlessObjects.size());i++)
         {
             C3Vector p;
@@ -207,9 +207,9 @@ void robot::openFile(std::string filenameAndPath)
     }
 #ifdef WIN_SIM
     //Set the path to the package
-    int cutPackagePath = filenameAndPath.find_last_of("/");
+    int cutPackagePath = (int)filenameAndPath.find_last_of("/");
     packagePath=filenameAndPath.substr(0,cutPackagePath);
-    cutPackagePath = packagePath.find_last_of("/");
+    cutPackagePath = (int)packagePath.find_last_of("/");
     packagePath=packagePath.substr(0,cutPackagePath);  //I do it twice to get  N:/drcsim-1.3/models/ so I can replace it for package://
 #endif
 }
@@ -584,7 +584,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
 
         //Create the joint/forceSensor/dummy:
         if (vJoints.at(i)->jointType==-1)
-            vJoints.at(i)->nJoint = simCreateDummy(0.02f,nullptr); // when joint type was not recognized
+            vJoints.at(i)->nJoint = simCreateDummy(0.02,nullptr); // when joint type was not recognized
         if (vJoints.at(i)->jointType==0)
             vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==1)
@@ -596,7 +596,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         if (vJoints.at(i)->jointType==4)
         { // when joint type is "fixed"
             int intParams[5]={1,4,4,0,0};
-            float floatParams[5]={0.02f,1.0f,1.0f,0.0f,0.0f};
+            double floatParams[5]={0.02,1.0,1.0,0.0,0.0};
             vJoints.at(i)->nJoint = simCreateForceSensor(0,intParams,floatParams,nullptr);
         }
 
@@ -604,9 +604,9 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         {
             if ( (vJoints.at(i)->jointType!=3)&&vJoints.at(i)->jointLimitsSpecified )
             {
-                float interval[2]={vJoints.at(i)->lowerLimit,vJoints.at(i)->upperLimit-vJoints.at(i)->lowerLimit};
+                double interval[2]={vJoints.at(i)->lowerLimit,vJoints.at(i)->upperLimit-vJoints.at(i)->lowerLimit};
                 simSetJointInterval(vJoints.at(i)->nJoint,0,interval);
-                simSetJointPosition(vJoints.at(i)->nJoint,0.0f); // shouldn't be needed anymore from CoppeliaSim 3.2.2 rev2 upwards
+                simSetJointPosition(vJoints.at(i)->nJoint,0.0); // shouldn't be needed anymore from CoppeliaSim 3.2.2 rev2 upwards
             }
             if (vJoints.at(i)->jointType==0)
             { // revolute
@@ -674,31 +674,31 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         jointAxisMatrix.setIdentity();
         C3Vector axis(vJoints.at(i)->axis);
         C3Vector rotAxis;
-        float rotAngle=0.0f;
-        if (axis(2)<1.0f)
+        double rotAngle=0.0;
+        if (axis(2)<1.0)
         {
-            if (axis(2)<=-1.0f)
-                rotAngle=3.14159265359f;
+            if (axis(2)<=-1.0)
+                rotAngle=3.14159265359;
             else
-                rotAngle=acosf(axis(2));
+                rotAngle=acos(axis(2));
             rotAxis(0)=-axis(1);
             rotAxis(1)=axis(0);
-            rotAxis(2)=0.0f;
+            rotAxis(2)=0.0;
             rotAxis.normalize();
             C7Vector m(jointAxisMatrix);
-            float alpha=-atan2(rotAxis(1),rotAxis(0));
-            float beta=atan2(-sqrt(rotAxis(0)*rotAxis(0)+rotAxis(1)*rotAxis(1)),rotAxis(2));
+            double alpha=-atan2(rotAxis(1),rotAxis(0));
+            double beta=atan2(-sqrt(rotAxis(0)*rotAxis(0)+rotAxis(1)*rotAxis(1)),rotAxis(2));
             C7Vector r;
             r.X.clear();
-            r.Q.setEulerAngles(0.0f,0.0f,alpha);
+            r.Q.setEulerAngles(0.0,0.0,alpha);
             m=r*m;
-            r.Q.setEulerAngles(0.0f,beta,0.0f);
+            r.Q.setEulerAngles(0.0,beta,0.0);
             m=r*m;
-            r.Q.setEulerAngles(0.0f,0.0f,rotAngle);
+            r.Q.setEulerAngles(0.0,0.0,rotAngle);
             m=r*m;
-            r.Q.setEulerAngles(0.0f,-beta,0.0f);
+            r.Q.setEulerAngles(0.0,-beta,0.0);
             m=r*m;
-            r.Q.setEulerAngles(0.0f,0.0f,-alpha);
+            r.Q.setEulerAngles(0.0,0.0,-alpha);
             m=r*m;
             jointAxisMatrix=m.getMatrix();
         }
@@ -723,8 +723,8 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
         {
             effectiveLinkHandle=Link->nLinkCollision;
             // Collision object position and orientation is already set in the Link
-            float xyz[3] = {0,0,0};
-            float rpy[3] = {0,0,0};
+            double xyz[3] = {0,0,0};
+            double rpy[3] = {0,0,0};
             linkDesiredConf.X.setData(xyz);
             linkDesiredConf.Q=getQuaternionFromRpy(rpy);
         }
@@ -734,8 +734,8 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
             if (effectiveLinkHandle != -1)
             {
                 // Visual object position and orientation is already set in the Link
-                float xyz[3] = {0,0,0};
-                float rpy[3] = {0,0,0};
+                double xyz[3] = {0,0,0};
+                double rpy[3] = {0,0,0};
                 linkDesiredConf.X.setData(xyz);
                 linkDesiredConf.Q=getQuaternionFromRpy(rpy);
             }
@@ -802,7 +802,7 @@ void robot::createSensors()
                 if (Sensor->cameraSensorPresent)
                 {
                     int intParams[4]={(int)Sensor->resolution[0],(int)Sensor->resolution[1],0,0};
-                    float floatParams[11]={Sensor->clippingPlanes[0],Sensor->clippingPlanes[1],60.0f*piValue/180.0f,0.2f,0.2f,0.4f,0.0f,0.0f,0.0f,0.0f,0.0f};
+                    double floatParams[11]={Sensor->clippingPlanes[0],Sensor->clippingPlanes[1],60.0*piValue/180.0,0.2,0.2,0.4,0.0,0.0,0.0,0.0,0.0};
                     Sensor->nSensor=simCreateVisionSensor(1,intParams,floatParams,nullptr);
                     //Set the name:
                     setSimObjectName(Sensor->nSensor,std::string(name+"_camera").c_str());
@@ -811,7 +811,7 @@ void robot::createSensors()
                 if (Sensor->proximitySensorPresent)
                 { // Proximity sensors seem to be very very specific and not general / generic at all. How come?! I.e. a succession of ray description (with min/max distances) would do
                     int intParams[8]={16,16,1,4,16,1,0,0};
-                    float floatParams[15]={0.0f,0.48f,0.1f,0.1f,0.1f,0.1f,0.0f,0.02f,0.02f,30.0f*piValue/180.0f,piValue/2.0f,0.0f,0.02f,0.0f,0.0f};
+                    double floatParams[15]={0.0,0.48,0.1,0.1,0.1,0.1,0.0,0.02,0.02,30.0*piValue/180.0,piValue/2.0,0.0,0.02,0.0,0.0};
                     proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
                     //Set the name:
                     setSimObjectName(proxSensHandle,std::string(Sensor->name+"_proximity").c_str());
@@ -832,7 +832,7 @@ void robot::createSensors()
                 C7Vector sensorLocal;
                 sensorLocal.X.setData(Sensor->origin_xyz);
                 sensorLocal.Q=getQuaternionFromRpy(Sensor->origin_rpy);
-                C4Vector rot(0.0f,0.0f,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
+                C4Vector rot(0.0,0.0,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
                 sensorLocal.Q=sensorLocal.Q*rot;
 
 
@@ -872,7 +872,7 @@ int robot::getJointPosition(std::string jointName)
 {
     for(size_t i = 0; i < vJoints.size() ; i++)
     {
-        if(vJoints.at(i)->name == jointName){return i;}
+        if(vJoints.at(i)->name == jointName){return int(i);}
     }
     std::string txt("there is no joint with name '"+ jointName+"'");
     printToConsole(sim_verbosity_scripterrors,txt.c_str());
@@ -882,7 +882,7 @@ int robot::getLinkPosition(std::string linkName)
 {
     for(size_t i = 0; i < vLinks.size() ; i++)
     {
-        if(vLinks.at(i)->name == linkName){return i;}
+        if(vLinks.at(i)->name == linkName){return int(i);}
     }
     std::string txt("there is no link with name '"+ linkName+"'");
     printToConsole(sim_verbosity_scripterrors,txt.c_str());

@@ -24,15 +24,15 @@ class urdfVisualOrCollision
         urdfVisualOrCollision();
 
         // Position
-        float xyz[3], rpy[3];
+        double xyz[3], rpy[3];
 
         // For geometry
-        float box_size[3];
-        float sphere_size[3];
-        float cylinder_size[3];
+        double box_size[3];
+        double sphere_size[3];
+        double cylinder_size[3];
         float rgba[4];                  // a is ignored
         bool hasColor;
-        float mesh_scaling[3];
+        double mesh_scaling[3];
 
         std::string meshFilename;
         std::string meshFilename_alt;
@@ -53,13 +53,13 @@ public:
     urdfVisualOrCollision &currentCollision();
 
     //Variables Inertial
-    float inertial_xyz[3];
-    float inertial_rpy[3];
+    double inertial_xyz[3];
+    double inertial_rpy[3];
     bool inertiaPresent;
 
     //Common variables
-    float inertia[9];
-    float mass;
+    double inertia[9];
+    double mass;
 
     std::string name;
 
@@ -87,7 +87,7 @@ public:
     void setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr);
     void setColor(std::string color);
     void verifyInertia();
-    int scaleShapeIfRequired(int shapeHandle,float scalingFactors[3]);
+    int scaleShapeIfRequired(int shapeHandle,double scalingFactors[3]);
     void createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull);
 };
 

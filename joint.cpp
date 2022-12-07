@@ -13,14 +13,14 @@ joint::joint()
 
      nJoint = -1;
      jointType=-1;
-     lowerLimit=0.0f;
-     upperLimit=0.0f;
+     lowerLimit=0.0;
+     upperLimit=0.0;
      jointLimitsSpecified=false;
 
-     effortLimitAngular=2.0f;
-     effortLimitLinear=200.0f;
-     velocityLimitAngular=20.0f;
-     velocityLimitLinear=20.0f;
+     effortLimitAngular=2.0;
+     effortLimitLinear=200.0;
+     velocityLimitAngular=20.0;
+     velocityLimitLinear=20.0;
 }
 
 

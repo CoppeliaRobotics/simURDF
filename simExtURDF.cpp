@@ -18,7 +18,7 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define PLUGIN_VERSION 14   // 1 until 20/1/2013 (1 was a very early beta)
+#define PLUGIN_VERSION 15   // 1 until 20/1/2013 (1 was a very early beta)
                             // 2 until 10/1/2014 (CoppeliaSim3.0.5)
                             // 3: new lock
                             // 4: since CoppeliaSim 3.1.2
@@ -32,6 +32,7 @@
                             // 12: Urdf --> URDF
                             // 13: removed C++ UI, now provided via add-on
                             // 14: various rework and bug fix
+                            // 15: doubles
 
 static LIBRARY simLib;
 
@@ -55,7 +56,7 @@ void simImportUrdfCallback(SScriptCallBack* p)
         if ( (inData->size()>=3)&&(inData->at(2).stringData.size()==1) )
             packageStr=inData->at(2).stringData[0];
         robot Robot(inData->at(0).stringData[0].c_str(), (options&1)==0, (options&2)==0,options&4,options&8,options&512,(options&32)==0,(options&64)==0,(options&128)==0,(options&256)==0,packageStr.c_str());
-        char* name = (char*)simCreateBuffer(Robot.name.length()+1);
+        char* name = (char*)simCreateBuffer(int(Robot.name.length()+1));
         memcpy((void*) name, (void*) Robot.name.c_str(), Robot.name.length()+1);
         D.pushOutData(CScriptFunctionDataItem(name));
         simReleaseBuffer(name);
