@@ -301,11 +301,20 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 visual.n = scaleShapeIfRequired(visual.n,visual.mesh_scaling);
         }
         else if (!isArrayEmpty(visual.sphere_size))
-            visual.n = simCreatePureShape( 1,1+16, visual.sphere_size, mass, nullptr);
+        {
+            visual.n = simCreatePrimitiveShape(sim_primitiveshape_spheroid,visual.sphere_size,1);
+            simSetShapeMass(visual.n,mass);
+        }
         else if (!isArrayEmpty(visual.cylinder_size))
-            visual.n = simCreatePureShape( 2,1+16, visual.cylinder_size, mass, nullptr);
+        {
+            visual.n = simCreatePrimitiveShape(sim_primitiveshape_cylinder,visual.cylinder_size,1);
+            simSetShapeMass(visual.n,mass);
+        }
         else if (!isArrayEmpty(visual.box_size))
-            visual.n = simCreatePureShape( 0,1+16, visual.box_size, mass, nullptr);
+        {
+            visual.n = simCreatePrimitiveShape(sim_primitiveshape_cuboid,visual.box_size,1);
+            simSetShapeMass(visual.n,mass);
+        }
     }
 
     //collisions
@@ -345,7 +354,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 collision.n=scaleShapeIfRequired(collision.n,collision.mesh_scaling);
 
                 int p;
-                simGetObjectIntParameter(collision.n,sim_shapeintparam_convex,&p);
+                simGetObjectInt32Param(collision.n,sim_shapeintparam_convex,&p);
                 if (p==0)
                 { // not convex
                     if (convexHull)
@@ -369,7 +378,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                         int h=simCreateMeshShape(0,0.0,vertices2,vertices2L,indices2,indices2L,nullptr);
                         simReleaseBuffer((char*)vertices2);
                         simReleaseBuffer((char*)indices2);
-                        simRemoveObject(collision.n);
+                        simRemoveObjects(&collision.n,1);
                         collision.n=h;
                     }
                     else
@@ -382,20 +391,38 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                         }
                     }
                 }
-                simSetObjectIntParameter(collision.n,3003,!inertiaPresent); // we make it non-static if there is an inertia
-                simSetObjectIntParameter(collision.n,3004,1); // we make it respondable since it is a collision object
+                simSetObjectInt32Param(collision.n,3003,!inertiaPresent); // we make it non-static if there is an inertia
+                simSetObjectInt32Param(collision.n,3004,1); // we make it respondable since it is a collision object
             }
 
         }
         else if (!isArrayEmpty(collision.sphere_size))
-            collision.n = simCreatePureShape( 1,1+2+4+8+16*(!inertiaPresent), collision.sphere_size, mass, nullptr);
+        {
+            collision.n = simCreatePrimitiveShape(sim_primitiveshape_spheroid,collision.sphere_size,1);
+            simSetObjectInt32Param(collision.n,sim_shapeintparam_respondable,1);
+            if (inertiaPresent)
+                simSetObjectInt32Param(collision.n,sim_shapeintparam_static,0);
+            simSetShapeMass(collision.n,mass);
+        }
         else if (!isArrayEmpty(collision.cylinder_size))
-            collision.n = simCreatePureShape( 2,1+2+4+8+16*(!inertiaPresent), collision.cylinder_size, mass, nullptr);
+        {
+            collision.n = simCreatePrimitiveShape(sim_primitiveshape_cylinder,collision.cylinder_size,1);
+            simSetObjectInt32Param(collision.n,sim_shapeintparam_respondable,1);
+            if (inertiaPresent)
+                simSetObjectInt32Param(collision.n,sim_shapeintparam_static,0);
+            simSetShapeMass(collision.n,mass);
+        }
         else if (!isArrayEmpty(collision.box_size))
-            collision.n = simCreatePureShape( 0,1+2+4+8+16*(!inertiaPresent), collision.box_size, mass, nullptr);
+        {
+            collision.n = simCreatePrimitiveShape(sim_primitiveshape_cuboid,collision.box_size,1);
+            simSetObjectInt32Param(collision.n,sim_shapeintparam_respondable,1);
+            if (inertiaPresent)
+                simSetObjectInt32Param(collision.n,sim_shapeintparam_static,0);
+            simSetShapeMass(collision.n,mass);
+        }
 
         // Set the respondable mask:
-        simSetObjectIntParameter(collision.n,3019,0xff00); // colliding with everything except with other objects in that tree hierarchy
+        simSetObjectInt32Param(collision.n,3019,0xff00); // colliding with everything except with other objects in that tree hierarchy
     }
 
     if (createVisualIfNone&&(visuals.size()==0))
@@ -415,7 +442,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         { // This is an empty link (no visual and no collision); create a dummy visual
             double dummySize[3]={0.0005,0.0005,0.0005};
             addVisual();
-            currentVisual().n = simCreatePureShape( 0,1+16, dummySize, 0.00001, nullptr);
+            currentVisual().n = simCreatePrimitiveShape(sim_primitiveshape_cuboid,dummySize,1);
+            simSetShapeMass(currentVisual().n,0.00001);
         }
     }
 
@@ -424,7 +452,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         // we do not have a collision object. Let's create a dummy collision object, since inertias can't exist on their own in CoppeliaSim:
         double dummySize[3]={0.05,0.05,0.05};
         addCollision();
-        currentCollision().n = simCreatePureShape( 1,1+2+4, dummySize, mass, nullptr); // we make it non-respondable!
+        currentCollision().n = simCreatePrimitiveShape(sim_primitiveshape_spheroid,dummySize,1);
+        simSetShapeMass(currentCollision().n,mass);
     }
 
     // Grouping visuals
@@ -503,23 +532,14 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         inertiaFrame.X.setData(inertial_xyz);
         inertiaFrame.Q=getQuaternionFromRpy(inertial_rpy);
 
-#if SIM_PROGRAM_VERSION_NB_FULL<4010002
-        // simSetShapeMassAndInertia is deprecated
-        C4X4Matrix x(inertiaFrame.getMatrix());
-        double i[12]={x.M(0,0),x.M(0,1),x.M(0,2),x.X(0),x.M(1,0),x.M(1,1),x.M(1,2),x.X(1),x.M(2,0),x.M(2,1),x.M(2,2),x.X(2)};
-        simSetShapeMassAndInertia(nLinkCollision,mass,inertia,C3Vector::zeroVector.data,i);
-#else
         double _m[12];
         simGetObjectMatrix(nLinkCollision,-1,_m); // nLinkCollision has not yet any parent/children
         C4X4Matrix m;
-        m.copyFromInterface(_m);
+        m.setData(_m);
         C4X4Matrix x(m.getInverse()*inertiaFrame.getMatrix());
         double i[12]={x.M(0,0),x.M(0,1),x.M(0,2),x.X(0),x.M(1,0),x.M(1,1),x.M(1,2),x.X(1),x.M(2,0),x.M(2,1),x.M(2,2),x.X(2)};
         simSetShapeMass(nLinkCollision,mass);
         simSetShapeInertia(nLinkCollision,inertia,i);
-#endif
-
-        //std::cout << "Mass: " << mass << std::endl;
     }
     else
     {
@@ -560,7 +580,7 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     {
         setSimObjectName(nLinkCollision,std::string(name+"_respondable").c_str());
         if (hideCollisionLinks)
-            simSetObjectIntParameter(nLinkCollision,10,256); // we "hide" that object in layer 9
+            simSetObjectInt32Param(nLinkCollision,10,256); // we "hide" that object in layer 9
     }
 }
 
@@ -609,7 +629,7 @@ int urdfLink::scaleShapeIfRequired(int shapeHandle,double scalingFactors[3])
             }
         }
         // Remove the old shape and create a new one with the scaled data:
-        simRemoveObject(shapeHandle);
+        simRemoveObjects(&shapeHandle,1);
         newShapeHandle=simCreateMeshShape(0,20.0*piValue/180.0,vertices,verticesSize,indices,indicesSize,nullptr);
         simReleaseBuffer((char*)vertices);
         simReleaseBuffer((char*)indices);

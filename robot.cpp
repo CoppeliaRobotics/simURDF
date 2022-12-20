@@ -169,9 +169,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     }
 
     // Now select all new objects:
-    simRemoveObjectFromSelection(sim_handle_all,-1);
-    for (int i=0;i<int(allObjects.size());i++)
-        simAddObjectToSelection(sim_handle_single,allObjects[i]);
+    simSetObjectSel(allObjects.data(),int(allObjects.size()));
 }
 
 
@@ -610,26 +608,26 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
             }
             if (vJoints.at(i)->jointType==0)
             { // revolute
-                simSetJointForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitAngular);
-                simSetObjectFloatParameter(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitAngular);
+                simSetJointTargetForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitAngular,false);
+                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitAngular);
             }
             else
             { // prismatic
-                simSetJointForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitLinear);
-                simSetObjectFloatParameter(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitLinear);
+                simSetJointTargetForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitLinear,false);
+                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitLinear);
             }
             // We turn the position control on:
             if (positionCtrl)
             {
-                simSetObjectIntParameter(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
-                simSetObjectIntParameter(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
+                simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
+                simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
             }
         }
 
         //Set the name:
         setSimObjectName(vJoints.at(i)->nJoint,vJoints.at(i)->name.c_str());
         if (hideJoints)
-            simSetObjectIntParameter(vJoints.at(i)->nJoint,sim_objintparam_visibility_layer,512); // layer 10
+            simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_objintparam_visibility_layer,512); // layer 10
     }
 
     //Set positions to joints from the 4x4matrix
@@ -894,13 +892,13 @@ void robot::setLocalRespondableMaskCummulative_alternate(int objHandle,bool bitS
     if (simGetObjectType(objHandle)==sim_object_shape_type)
     {
         int p;
-        simGetObjectIntParameter(objHandle,sim_shapeintparam_respondable,&p);
+        simGetObjectInt32Param(objHandle,sim_shapeintparam_respondable,&p);
         if (p!=0)
         {
             if (bitSet)
-                simSetObjectIntParameter(objHandle,sim_shapeintparam_respondable_mask,0xff01);
+                simSetObjectInt32Param(objHandle,sim_shapeintparam_respondable_mask,0xff01);
             else
-                simSetObjectIntParameter(objHandle,sim_shapeintparam_respondable_mask,0xff02);
+                simSetObjectInt32Param(objHandle,sim_shapeintparam_respondable_mask,0xff02);
             bitSet=!bitSet;
         }
     }

@@ -118,10 +118,10 @@ SIM_DLLEXPORT void simEnd()
 SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
 {
     int errorModeSaved;
-    simGetIntegerParameter(sim_intparam_error_report_mode,&errorModeSaved);
-    simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
+    simGetInt32Param(sim_intparam_error_report_mode,&errorModeSaved);
+    simSetInt32Param(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
     void* retVal=nullptr;
 
-    simSetIntegerParameter(sim_intparam_error_report_mode,errorModeSaved); // restore previous settings
+    simSetInt32Param(sim_intparam_error_report_mode,errorModeSaved); // restore previous settings
     return(retVal);
 }
