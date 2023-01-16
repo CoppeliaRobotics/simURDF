@@ -197,6 +197,14 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         return xml
     end
 
+    exportFuncs.getObjectName=exportFuncs.getObjectName or function(exportFuncs,objectHandle)
+        -- FIXME: use the short path option (6 or 7) when available
+        local baseHandle=sim.getObject(':',{proxy=objectHandle})
+        local n=sim.getObjectAliasRelative(objectHandle,baseHandle,1)
+        n=n:gsub('%W','__')
+        return n
+    end
+
     exportFuncs.getShapeGeometryNode=exportFuncs.getShapeGeometryNode or function(exportFuncs,shapeHandle,baseName)
         local geometryNode=exportFuncs.newNode{'geometry'}
         local r,pureType,dims=sim.getShapeGeomInfo(shapeHandle)
@@ -214,7 +222,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
             local cylinderNode=exportFuncs.newNode{'cylinder',radius=x/2,length=z}
             table.insert(geometryNode,cylinderNode)
         else
-            local fn=string.format('%s_%s.dae',baseName,sim.getObjectAlias(shapeHandle,3))
+            local fn=string.format('%s_%s.dae',baseName,exportFuncs.getObjectName(exportFuncs,shapeHandle))
             simAssimp.exportShapes({shapeHandle},fn,'collada',1.0,simAssimp.upVector.z,4+512)
             local meshNode=exportFuncs.newNode{'mesh',filename='file://'..fn}
             table.insert(geometryNode,meshNode)
@@ -316,7 +324,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
         local visualNode=exportFuncs.newNode{'visual'}
         table.insert(visualNode,exportFuncs.getShapeOriginNode(exportFuncs,visualHandle,linkHandle))
         table.insert(visualNode,exportFuncs.getShapeGeometryNode(exportFuncs,visualHandle,baseName))
-        local materialNode=exportFuncs.newNode{'material',name=sim.getObjectAlias(visualHandle,3)..'_material'}
+        local materialNode=exportFuncs.newNode{'material',name=exportFuncs.getObjectName(exportFuncs,visualHandle)..'_material'}
         local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
         local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
         table.insert(materialNode,colorNode)
@@ -325,7 +333,7 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     end
 
     exportFuncs.getLinkNode=exportFuncs.getLinkNode or function(exportFuncs,linkHandle,baseName)
-        local linkNode=exportFuncs.newNode{'link',name=sim.getObjectAlias(linkHandle,3)}
+        local linkNode=exportFuncs.newNode{'link',name=exportFuncs.getObjectName(exportFuncs,linkHandle)}
         table.insert(linkNode,exportFuncs.getLinkInertialNode(exportFuncs,linkHandle))
         table.insert(linkNode,exportFuncs.getLinkCollisionNode(exportFuncs,linkHandle,baseName))
         local visuals=exportFuncs.getVisuals(exportFuncs,linkHandle)
@@ -378,19 +386,19 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
 
     exportFuncs.getJointNode=exportFuncs.getJointNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
         local jointNode=exportFuncs.newNode{'joint'}
-        jointNode.name=sim.getObjectAlias(jointHandle,3)
+        jointNode.name=exportFuncs.getObjectName(exportFuncs,jointHandle)
         jointNode.type=exportFuncs.getJointType(exportFuncs,jointHandle)
         table.insert(jointNode,exportFuncs.getJointAxisNode(exportFuncs,jointHandle,parentHandle,childHandle))
         local limitNode=exportFuncs.getJointLimitNode(exportFuncs,jointHandle)
         if limitNode~=nil then table.insert(jointNode,limitNode) end
-        table.insert(jointNode,exportFuncs.newNode{'parent',link=sim.getObjectAlias(parentHandle,3)})
-        table.insert(jointNode,exportFuncs.newNode{'child',link=sim.getObjectAlias(childHandle,3)})
+        table.insert(jointNode,exportFuncs.newNode{'parent',link=exportFuncs.getObjectName(exportFuncs,parentHandle)})
+        table.insert(jointNode,exportFuncs.newNode{'child',link=exportFuncs.getObjectName(exportFuncs,childHandle)})
         table.insert(jointNode,exportFuncs.getJointOriginNode(exportFuncs,jointHandle,parentHandle,childHandle))
         return jointNode
     end
 
     exportFuncs.getRobotNode=exportFuncs.getRobotNode or function(exportFuncs,modelHandle,baseName)
-        local robotNode=exportFuncs.newNode{'robot',name=sim.getObjectAlias(modelHandle,3)}
+        local robotNode=exportFuncs.newNode{'robot',name=exportFuncs.getObjectName(exportFuncs,modelHandle)}
         local linkDone={}
         for i,link in ipairs(exportFuncs.getModelHierarchy(exportFuncs,modelHandle)) do
             for j,linkHandle in ipairs{link.parentHandle,link.childHandle} do
@@ -449,9 +457,9 @@ function simURDF.sendTF(modelHandle,fileName)
     local ef=simURDF.export(modelHandle,fileName,'f')
     for i,link in ipairs(ef.getModelHierarchy(ef,modelHandle)) do
         local tf=geometry_msgs.msg.TransformStamped.__new()
-        tf.header.frame_id=sim.getObjectAlias(link.parentHandle,3)
+        tf.header.frame_id=ef.getObjectName(ef,link.parentHandle)
         tf.header.stamp=simROS2.getTime(simROS2.clock_type.system)
-        tf.child_frame_id=sim.getObjectAlias(link.childHandle,3)
+        tf.child_frame_id=ef.getObjectName(ef,link.childHandle)
         local p=sim.getObjectPose(link.childHandle,link.parentHandle)
         tf.transform.translation={x=p[1],y=p[2],z=p[3]}
         tf.transform.rotation={x=p[4],y=p[5],z=p[6],w=p[7]}
