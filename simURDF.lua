@@ -198,10 +198,10 @@ function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
     end
 
     exportFuncs.getObjectName=exportFuncs.getObjectName or function(exportFuncs,objectHandle)
-        -- FIXME: use the short path option (6 or 7) when available
         local baseHandle=sim.getObject(':',{proxy=objectHandle})
-        local n=sim.getObjectAliasRelative(objectHandle,baseHandle,1)
-        n=n:gsub('%W','__')
+        local n=sim.getObjectAliasRelative(objectHandle,baseHandle,7)
+        n=n:gsub('%W','')
+        if n=='' then return 'robot_base' end
         return n
     end
 
