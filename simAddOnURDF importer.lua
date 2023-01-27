@@ -1,5 +1,5 @@
 function sysCall_info()
-    return {autoStart=false,menu='Importers\nURDF importer'}
+    return {autoStart=false,menu='Importers\nURDF importer...'}
 end
 
 function sysCall_init()
