@@ -28,18 +28,18 @@ coppeliasim_add_plugin(
     sensor.cpp
     commonFunctions.cpp
     rospackagehelper.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/3Vector.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/3X3Matrix.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/4Vector.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/4X4Matrix.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/MMatrix.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/7Vector.cpp
-    ${COPPELIASIM_ROOT_DIR}/programming/simMath/MyMath.cpp
-    ${COPPELIASIM_COMMON_DIR}/scriptFunctionData.cpp
-    ${COPPELIASIM_COMMON_DIR}/scriptFunctionDataItem.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/3Vector.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/3X3Matrix.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/4Vector.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/4X4Matrix.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/MMatrix.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/7Vector.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/simMath/MyMath.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/scriptFunctionData.cpp
+    ${COPPELIASIM_INCLUDE_DIR}/scriptFunctionDataItem.cpp
 )
 target_compile_definitions(simExtURDF PRIVATE SIM_MATH_DOUBLE)
-target_include_directories(simExtURDF PRIVATE ${COPPELIASIM_ROOT_DIR}/programming/simMath)
+target_include_directories(simExtURDF PRIVATE ${COPPELIASIM_INCLUDE_DIR}/simMath)
 coppeliasim_add_addon("simAddOnURDF importer.lua")
 coppeliasim_add_addon("simAddOnURDF exporter.lua")
 coppeliasim_add_lua(simURDF.lua)
