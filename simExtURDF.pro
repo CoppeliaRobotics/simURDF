@@ -10,7 +10,6 @@ DEFINES -= UNICODE
 DEFINES += SIM_MATH_DOUBLE
 CONFIG += shared plugin
 INCLUDEPATH += "../include"
-INCLUDEPATH += "../simMath"
 greaterThan(QT_MAJOR_VERSION,4): QT += widgets
 
 *-msvc* {
@@ -59,16 +58,16 @@ SOURCES += \
     joint.cpp \
     sensor.cpp \
     commonFunctions.cpp \
-    ../simMath/3Vector.cpp \
-    ../simMath/3X3Matrix.cpp \
-    ../simMath/4Vector.cpp \
-    ../simMath/4X4Matrix.cpp \
-    ../simMath/MMatrix.cpp \
-    ../simMath/7Vector.cpp \
-    ../simMath/MyMath.cpp \
-    ../common/simLib.cpp \
-    ../common/scriptFunctionData.cpp \
-    ../common/scriptFunctionDataItem.cpp \
+    ../include/simMath/3Vector.cpp \
+    ../include/simMath/3X3Matrix.cpp \
+    ../include/simMath/4Vector.cpp \
+    ../include/simMath/4X4Matrix.cpp \
+    ../include/simMath/MMatrix.cpp \
+    ../include/simMath/7Vector.cpp \
+    ../include/simMath/MyMath.cpp \
+    ../include/simLib.cpp \
+    ../include/scriptFunctionData.cpp \
+    ../include/scriptFunctionDataItem.cpp \
     rospackagehelper.cpp
 
 HEADERS +=\
@@ -79,13 +78,13 @@ HEADERS +=\
     joint.h \
     sensor.h \
     commonFunctions.h \
-    ../simMath/3Vector.h \
-    ../simMath/3X3Matrix.h \
-    ../simMath/4Vector.h \
-    ../simMath/4X4Matrix.h \
-    ../simMath/MMatrix.h \
-    ../simMath/7Vector.h \
-    ../simMath/MyMath.h \
+    ../include/simMath/3Vector.h \
+    ../include/simMath/3X3Matrix.h \
+    ../include/simMath/4Vector.h \
+    ../include/simMath/4X4Matrix.h \
+    ../include/simMath/MMatrix.h \
+    ../include/simMath/7Vector.h \
+    ../include/simMath/MyMath.h \
     ../include/simLib.h \
     ../include/scriptFunctionData.h \
     ../include/scriptFunctionDataItem.h \
