@@ -2,7 +2,7 @@
 
 #include "commonFunctions.h"
 #include <string>
-#include "simLib.h"
+#include <simLib.h>
 
 void printToConsole(int verbosity,const char* txt)
 {
