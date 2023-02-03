@@ -1,6 +1,6 @@
 #include "sensor.h"
 #include "commonFunctions.h"
-#include "4X4Matrix.h"
+#include <simMath/4X4Matrix.h>
 
 sensor::sensor()
 {

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
-#include "4X4Matrix.h"
+#include <simMath/4X4Matrix.h>
 
 
 class sensor

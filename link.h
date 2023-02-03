@@ -7,11 +7,11 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 
-#include "4X4Matrix.h"
-#include "3Vector.h"
-#include "7Vector.h"
-#include "3X3Matrix.h"
-#include "MyMath.h"
+#include <simMath/4X4Matrix.h>
+#include <simMath/3Vector.h>
+#include <simMath/7Vector.h>
+#include <simMath/3X3Matrix.h>
+#include <simMath/MyMath.h>
 
 #include "commonFunctions.h"
 

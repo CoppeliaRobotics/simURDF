@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
-#include "4Vector.h"
+#include <simMath/4Vector.h>
 
 #ifndef piValue
     #define piValue 3.14159265359

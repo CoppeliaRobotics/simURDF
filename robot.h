@@ -7,7 +7,7 @@
 #include "link.h"
 #include "joint.h"
 #include "sensor.h"
-#include "4X4Matrix.h"
+#include <simMath/4X4Matrix.h>
 
 
 

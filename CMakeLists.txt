@@ -39,7 +39,6 @@ coppeliasim_add_plugin(
     ${COPPELIASIM_INCLUDE_DIR}/scriptFunctionDataItem.cpp
 )
 target_compile_definitions(simExtURDF PRIVATE SIM_MATH_DOUBLE)
-target_include_directories(simExtURDF PRIVATE ${COPPELIASIM_INCLUDE_DIR}/simMath)
 coppeliasim_add_addon("simAddOnURDF importer.lua")
 coppeliasim_add_addon("simAddOnURDF exporter.lua")
 coppeliasim_add_lua(simURDF.lua)
