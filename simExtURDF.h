@@ -1,6 +1,6 @@
 #pragma once
 
-#include <simLib.h>
+#include <simLib/simLib.h>
 #include <string>
 
 #ifdef _WIN32

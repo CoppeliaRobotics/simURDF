@@ -1,5 +1,5 @@
 #include "simExtURDF.h"
-#include <simLib.h>
+#include <simLib/simLib.h>
 #include <iostream>
 #include <vector>
 #include <bitset>
@@ -7,7 +7,7 @@
 #include <boost/lexical_cast.hpp>
 #include <math.h>
 #include "robot.h"
-#include <scriptFunctionData.h>
+#include <simLib/scriptFunctionData.h>
 
 #ifdef _WIN32
     #include <direct.h>
