@@ -65,9 +65,9 @@ SOURCES += \
     ../include/simMath/MMatrix.cpp \
     ../include/simMath/7Vector.cpp \
     ../include/simMath/MyMath.cpp \
-    ../include/simLib.cpp \
-    ../include/scriptFunctionData.cpp \
-    ../include/scriptFunctionDataItem.cpp \
+    ../include/simLib/simLib.cpp \
+    ../include/simLib/scriptFunctionData.cpp \
+    ../include/simLib/scriptFunctionDataItem.cpp \
     rospackagehelper.cpp
 
 HEADERS +=\
@@ -85,9 +85,9 @@ HEADERS +=\
     ../include/simMath/MMatrix.h \
     ../include/simMath/7Vector.h \
     ../include/simMath/MyMath.h \
-    ../include/simLib.h \
-    ../include/scriptFunctionData.h \
-    ../include/scriptFunctionDataItem.h \
+    ../include/simLib/simLib.h \
+    ../include/simLib/scriptFunctionData.h \
+    ../include/simLib/scriptFunctionDataItem.h \
     rospackagehelper.h
 
 unix:!symbian {
