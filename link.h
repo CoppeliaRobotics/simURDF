@@ -88,6 +88,6 @@ public:
     void setColor(std::string color);
     void verifyInertia();
     int scaleShapeIfRequired(int shapeHandle,double scalingFactors[3]);
-    void createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull);
+    void createLink(int options);
 };
 

@@ -12,9 +12,10 @@ function sysCall_init()
         [4]={name='Convex decompose non-convex collision links',key='convexDecompose'},
         [5]={name='Create visual links if none',key='createVisualIfNone'},
         [6]={name='Center model above ground',key='centerModel'},
-        [7]={name='Prepare model definition if feasible',key='prepareModel'},
+        [7]={name='Prepare model definition if possible',key='prepareModel'},
         [8]={name='Alternate local respondable masks',key='alternateLocalRespondableMasks'},
         [9]={name='Enable position ctrl of joints',key='positionCtrl'},
+        [10]={name='Set shape origin at joint location where possible',key='shapeAtJointloc'},
     }
 
     options={
@@ -27,6 +28,7 @@ function sysCall_init()
         prepareModel=true,
         alternateLocalRespondableMasks=false,
         positionCtrl=true,
+        shapeAtJointloc=false,
     }
 
     local importExportDir=sim.getStringParam(sim.stringparam_importexportdir)
@@ -36,8 +38,6 @@ function sysCall_init()
         sim.setStringParam(sim.stringparam_importexportdir,fileName[1])
         done=false
         options.fileName=fileName[1]
-        local function checkbox(id,text,varname)
-        end
         local xml='<ui modal="true" layout="vbox" title="Importing '..fileName[1]..'..." closeable="true" on-close="closeDialog">\n'
         for i=1,#optionsInfo,1 do
             local o=optionsInfo[i]
@@ -73,6 +73,7 @@ function importURDF()
     if not options.prepareModel then opts=opts+64 end
     if not options.alternateLocalRespondableMasks then opts=opts+128 end
     if not options.positionCtrl then opts=opts+256 end
+    if options.shapeAtJointloc then opts=opts+1024 end
     closeDialog()
     pcall(function() simURDF.import(fn,opts,packageStr) end)
 end

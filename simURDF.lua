@@ -1,451 +1,471 @@
 local simURDF={}
 
-function simURDF.export(modelHandle,fileName,outputMode,exportFuncs)
-    assert(sim.isHandle(modelHandle),'not a valid handle')
-    assert(fileName,'filename not specified')
+function simURDF.export(origModel,fileName,options)
+    options=options or 0
+    -- options & bit0: transform dummies into red cubes
+    -- options & bit1: make visuals and collisions origin frame where parent joint is, if possible
+    -- options & bit2: do not reset joint positions to 0
+    assert(sim.isHandle(origModel),'not a valid handle')
     local baseName=fileName
     if fileName:find('%.urdf$') then
         baseName=fileName:sub(1, -6)
     else
         fileName=fileName..'.urdf'
     end
-    outputMode=outputMode or 'file'
-    exportFuncs=exportFuncs or {}
     
-    function exportFuncs.createSimplifiedModel(originalModel)
-        local modelCopy=sim.copyPasteObjects({originalModel},1+2+4+8+16+32)[1]
-        
-        local function transferChildren(objectHandle,newParentHandle)
-            local c=sim.getObjectChild(objectHandle,0)
-            while c>=0 do
-                sim.setObjectParent(c,newParentHandle,true)
-                c=sim.getObjectChild(objectHandle,0)
-            end
-        end
-        
-        -- Remove invisible models:
-        local l=sim.getObjectsInTree(modelCopy)
+    local model=sim.copyPasteObjects({origModel},1+2+4+8+16+32)[1] -- work with a copy
+    sim.setModelProperty(model,sim.getModelProperty(origModel))
+    if (options&1)~=0 then
+        _S.urdf.replaceDummies(model)
+    end
+    if (options&4)==0 then
+        local l=sim.getObjectsInTree(model,sim.object_joint_type)
         for i=1,#l,1 do
-            if sim.isHandle(l[i]) then
-                if sim.getModelProperty(l[i])&(sim.modelproperty_not_model|sim.modelproperty_not_visible)==sim.modelproperty_not_visible then
-                    sim.removeModel(l[i])
-                end
+            if sim.getJointType(l[i])~=sim.joint_spherical_subtype then
+                sim.setJointPosition(l[i],0)
             end
         end
+    end
+    _S.urdf.insertAuxShapes(model)
+    local info={baseFile=baseName,base=model,options=options}
+    local tree=_S.urdf.newNode({'robot',name=sim.getObjectAlias(model)})
+    local dynamicStage=0
+    local mprop=sim.getModelProperty(model)
+    if (mprop&sim.modelproperty_not_dynamic)~=0 then
+        dynamicStage=2
+    end
+    local tree=_S.urdf.parseAndCreateMeshFiles(tree,model,-1,-1,dynamicStage,info)
+    sim.removeModel(model)
+    local xml=_S.urdf.toXML(tree)
+    local f=io.open(fileName,'w+')
+    f:write(xml)
+    f:close()
+end
 
-        -- Remove objects that can't be exported to URDF:
-        local l=sim.getObjectsInTree(modelCopy)
-        for i=1,#l,1 do
-            local t=sim.getObjectType(l[i])
-            if t~=sim.object_shape_type and t~=sim.object_joint_type and t~=sim.object_forcesensor_type then
-                sim.removeObject(l[i])
+_S.urdf={}
+function _S.urdf.newNode(t)
+    assert(type(t)=='table','bad type')
+    local name=table.remove(t,1)
+    t[0]=name
+    return t
+end
+
+function _S.urdf.toXML(node,level)
+    level=level or 0
+    local indent=''; for i=1,level do indent=indent..'    ' end
+    local xml=''
+    if level==0 then xml=xml..'<?xml version="1.0"?>\n' end
+    xml=xml..indent..'<'..node[0]
+    for k,v in pairs(node) do
+        if type(k)~='number' then
+            for c,r in pairs{['"']='&quot;',['<']='&lt;',['>']='&gt;'} do v=string.gsub(v,c,r) end
+            xml=xml..' '..k..'="'..v..'"'
+        end
+    end
+    if #node>0 then
+        xml=xml..'>\n'
+        for i,child in ipairs(node) do
+            xml=xml.._S.urdf.toXML(child,level+1)
+        end
+        xml=xml..indent..'</'..node[0]..'>\n'
+    else
+        xml=xml..' />\n'
+    end
+    return xml
+end
+
+function _S.urdf.appendVisibleChildShapes(array,object)
+    local shapes=sim.getObjectsInTree(object,sim.object_shape_type,1|2)
+    for i=1,#shapes,1 do
+        if sim.getObjectInt32Param(shapes[i],sim.objintparam_visible)~=0 then
+            array[#array+1]=shapes[i]
+        end
+        _S.urdf.appendVisibleChildShapes(array,shapes[i])
+    end
+end
+
+function _S.urdf.getFirstJoints(object,dynamicStage)
+    local retVal={}
+    local objs={}
+    local ind=0
+    while true do
+        local child=sim.getObjectChild(object,ind)
+        if child==-1 then
+            break
+        end
+        objs[#objs+1]={object=child,dynamicStage=dynamicStage}
+        ind=ind+1
+    end
+    for i=1,#objs,1 do
+        local obj=objs[i].object
+        local dynStage=objs[i].dynamicStage
+        local mprop=sim.getModelProperty(obj)
+        if (mprop&sim.modelproperty_not_model)~=0 then
+            mprop=0
+        end
+        if (mprop&sim.modelproperty_not_visible)==0 then
+            if (mprop&sim.modelproperty_not_dynamic)~=0 then
+                dynStage=2 -- rest of the chain cannot be dynamic anymore
+            end
+            local objType=sim.getObjectType(obj)
+            if objType==sim.object_shape_type then
+                if sim.getObjectInt32Param(obj,sim.shapeintparam_static)==0 then
+                    if dynStage==0 then
+                        dynStage=1
+                    end
+                else
+                    if dynStage==1 then
+                        dynStage=2 -- rest of the chain cannot be dynamic anymore
+                    end
+                end
+                local ind=0
+                while true do
+                    local child=sim.getObjectChild(obj,ind)
+                    if child==-1 then
+                        break
+                    end
+                    objs[#objs+1]={object=child,dynamicStage=dynStage}
+                    ind=ind+1
+                end
+            elseif (objType==sim.object_joint_type) then
+                if sim.getJointMode(obj)==sim.jointmode_dynamic then
+                    if dynStage==0 then
+                        dynStage=1
+                    end
+                else
+                    if dynStage==1 then
+                        dynStage=2 -- rest of the chain cannot be dynamic anymore
+                    end
+                end
+                retVal[#retVal+1]={joint=obj,dynamicStage=dynStage}
+            elseif (objType==sim.object_forcesensor_type) then
+                retVal[#retVal+1]={joint=obj,dynamicStage=dynStage}
             end
         end
+    end
+    return retVal
+end
 
-        local stayInLoop=true
-        while stayInLoop do
-            stayInLoop=false
-            -- Check all joints that do not have a shape as a parent. Insert an aux shape in that case
-            local l=sim.getObjectsInTree(modelCopy)
-            for i=1,#l,1 do
-                local h=l[i]
-                local t=sim.getObjectType(h)
-                if t==sim.object_joint_type or t==sim.object_forcesensor_type then
-                    local parent=sim.getObjectParent(h)
-                    if sim.getObjectType(parent)~=sim.object_shape_type then
-                        -- add an auxiliary static shape
-                        local auxShape=sim.createPrimitiveShape(sim.primitiveshape_sphere,{0.005,0.005,0.005})
-                        sim.setObjectPose(auxShape,parent,{0,0,0,0,0,0,1})
-                        sim.setObjectParent(h,auxShape,true)
-                        sim.setObjectParent(auxShape,parent,true)
-                    end
-                end
+function _S.urdf.matrixToRPY(m)
+    -- Convert a 3x3 rotation matrix to roll-pitch-yaw coordinates.
+    -- URDF's rpy are the Z1-Y2-X3 Tait-Bryan angles.
+    -- See https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
+    if getmetatable(m)~=Matrix then
+        assert(type(m)=='table','table expected')
+        assert(#m==9,'not a 3x3 matrix (9 values expected)')
+        m=Matrix(3,3,m)
+    end
+    assert(m:sameshape{3,3},'not a 3x3 matrix')
+    local r,p,y=0,0,0
+    if math.abs(m[3][1])>=1-1e-12 then
+        y=0
+        if m[3][1]<0 then
+            p=math.pi/2
+            r=math.atan2(m[1][2],m[1][3])
+        else
+            p=-math.pi/2
+            r=math.atan2(-m[1][2],-m[1][3])
+        end
+    else
+        p=math.pi+math.asin(m[3][1])
+        r=math.atan2(m[3][2]/math.cos(p),m[3][3]/math.cos(p))
+        y=math.atan2(m[2][1]/math.cos(p),m[1][1]/math.cos(p))
+    end
+    return {r,p,y}
+end
+    
+function _S.urdf.matrixToXYZRPY(m)
+    if getmetatable(m)~=Matrix then
+        assert(type(m)=='table','table expected')
+        assert(#m==12 or #m==16,'not a 4x4 matrix (12 or 16 values expected)')
+        m=Matrix(#m//4,4,m)
+    end
+    assert(m:sameshape{3,4} or m:sameshape{4,4},'not a 4x4 matrix')
+    local R,t=m:slice(1,1,3,3),m:slice(1,4,3,4)
+    local xyz={t[1],t[2],t[3]}
+    local rpy=_S.urdf.matrixToRPY(R)
+    return xyz,rpy
+end
+    
+function _S.urdf.getShapeOriginNode(shape,parent)
+    local originNode=_S.urdf.newNode{'origin'}
+    local xyz,rpy=_S.urdf.matrixToXYZRPY(sim.getObjectMatrix(shape|sim.handleflag_reljointbaseframe,parent))
+    originNode.xyz=string.format('%f %f %f',unpack(xyz))
+    originNode.rpy=string.format('%f %f %f',unpack(rpy))
+    return originNode
+end
+
+function _S.urdf.getLinkInertialNode(shape,parent)
+    local inertialNode=_S.urdf.newNode{'inertial'}
+    local mi,mt=sim.getShapeInertia(shape)
+    local m=sim.getObjectMatrix(shape|sim.handleflag_reljointbaseframe,parent)
+    mt=sim.multiplyMatrices(m,mt)
+    local xyz,rpy=_S.urdf.matrixToXYZRPY(mt)
+    table.insert(inertialNode,_S.urdf.newNode{'origin',
+        xyz=string.format('%f %f %f',unpack(xyz)),
+        rpy=string.format('%f %f %f',unpack(rpy)),
+    })
+    table.insert(inertialNode,_S.urdf.newNode{'inertia',
+        ixx=mi[1],
+        ixy=(mi[2]+mi[4])/2,
+        ixz=(mi[3]+mi[7])/2,
+        iyy=mi[5],
+        iyz=(mi[6]+mi[8])/2,
+        izz=mi[9],
+    })
+    table.insert(inertialNode,_S.urdf.newNode{'mass',value=sim.getShapeMass(shape)})
+    return inertialNode
+end
+
+
+function _S.urdf.getCollisionOrVisualNodes(shape,prevJoint,info,isCollisionNode)
+    local retVal={}
+    local originalFramePose=sim.getObjectPose(shape,sim.handle_world)
+    local shapes=sim.copyPasteObjects({shape},2+4+8+16+32)
+    for i=1,#shapes,1 do
+        local r,pureType,dims=sim.getShapeGeomInfo(shapes[i])
+        if (r&1)~=0 then
+            local subShapes=sim.ungroupShape(shapes[i])
+            table.remove(shapes,i)
+            for j=1,#subShapes,1 do
+                shapes[#shapes+1]=subShapes[j]
             end
-            
-            -- Check all joints that have more than one direct shape child. Group visible shapes in that case, and erase the other:
-            local l=sim.getObjectsInTree(modelCopy)
-            for i=1,#l,1 do
-                local h=l[i]
-                if sim.isHandle(h) then
-                    local t=sim.getObjectType(h)
-                    if t==sim.object_joint_type or t==sim.object_forcesensor_type then
-                        local l1=sim.getObjectsInTree(h,sim.object_shape_type,1+2)
-                        if #l1>1 then
-                            local j=1
-                            while j<=#l1 do
-                                local l2=sim.getObjectsInTree(l1[j],sim.object_shape_type,1+2)
-                                for j=1,#l2,1 do
-                                    l1[#l1+1]=l2[j]
-                                end
-                                j=j+1
-                            end
-                            local toGroup={}
-                            local toRemove={}
-                            for j=1,#l1,1 do
-                                if sim.getObjectInt32Param(l1[j],sim.objintparam_visible)~=0 then
-                                    toGroup[#toGroup+1]=l1[j]
-                                else
-                                    toRemove[#toRemove+1]=l1[j]
-                                end
-                            end
-                            for j=2,#toGroup,1 do
-                                transferChildren(toGroup[j],toGroup[1])
-                            end
-                            if #toGroup>1 then
-                                local m=toGroup[1]
-                                table.remove(toGroup,1)
-                                toGroup[#toGroup+1]=m
-                                sim.groupShapes(toGroup)
-                                for j=1,#toRemove,1 do
-                                    transferChildren(toRemove[j],m)
-                                end
-                            else
-                                stayInLoop=true -- we might again have two consecutive joints
-                            end
-                            for j=1,#toRemove,1 do
-                                sim.removeObject(toRemove[j])
-                            end
-                        end
-                    end
-                end
+        end
+    end
+    for i=1,#shapes,1 do
+        local aShape=shapes[i]
+        if (info.options&2)~=0 then
+            sim.relocateShapeFrame(aShape,{0,0,0,0,0,0,1}) -- We ungrouped a shape. We try to keep the same frame
+        else
+            if #shapes>1 then
+                sim.relocateShapeFrame(aShape,originalFramePose) -- We ungrouped a shape. We try to keep the same frame
             end
+        end
+        local node,nm
+        if isCollisionNode then
+            node=_S.urdf.newNode{'collision'}
+            nm=_S.urdf.getObjectName(shape,info)..'_coll_'..i
+        else
+            node=_S.urdf.newNode{'visual'}
+            nm=_S.urdf.getObjectName(shape,info)..'_vis_'..i
+        end
+        table.insert(node,_S.urdf.getShapeOriginNode(aShape,prevJoint))
+        table.insert(node,_S.urdf.getShapeGeometryNode(aShape,nm,info))
+
+        if not isCollisionNode then
+            local materialNode=_S.urdf.newNode{'material',name=_S.urdf.getObjectName(shape,info)..'_material'}
+            local r,col=sim.getShapeColor(aShape,nil,sim.colorcomponent_ambient_diffuse)
+            local colorNode=_S.urdf.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
+            table.insert(materialNode,colorNode)
+            table.insert(node,materialNode)
         end
         
-        -- Now we group all visuals:
-        local l=sim.getObjectsInTree(modelCopy)
-        for i=1,#l,1 do
-            local h=l[i]
-            if sim.isHandle(h) then
-                local t=sim.getObjectType(h)
-                local parent=sim.getObjectParent(h)
-                if t==sim.object_shape_type and (parent==-1 or sim.getObjectType(parent)~=sim.object_shape_type)  then
-                    local l1=sim.getObjectsInTree(h,sim.object_shape_type,1+2)
-                    local j=1
-                    while j<=#l1 do
-                        local l2=sim.getObjectsInTree(l1[j],sim.object_shape_type,1+2)
-                        for j=1,#l2,1 do
-                            l1[#l1+1]=l2[j]
-                        end
-                        j=j+1
-                    end
-                    
-
-                    local toGroup={}
-                    local toRemove={}
-                    for j=1,#l1,1 do
-                        if sim.getObjectInt32Param(l1[j],sim.objintparam_visible)~=0 then
-                            toGroup[#toGroup+1]=l1[j]
-                        else
-                            toRemove[#toRemove+1]=l1[j]
-                        end
-                    end
-                    for j=2,#toGroup,1 do
-                        transferChildren(toGroup[j],toGroup[1])
-                    end
-                    if #toGroup>1 then
-                        local m=toGroup[1]
-                        table.remove(toGroup,1)
-                        toGroup[#toGroup+1]=m
-                        sim.groupShapes(toGroup)
-                        for j=1,#toRemove,1 do
-                            transferChildren(toRemove[j],m)
-                        end
-                        if sim.getObjectInt32Param(h,sim.shapeintparam_static)~=0 and (sim.getObjectInt32Param(h,sim.shapeintparam_respondable)==0 or sim.getObjectInt32Param(h,sim.objintparam_visible)~=0) then
-                            transferChildren(m,h)
-                            sim.groupShapes({m,h})
-                        end
-                    end
-                    for j=1,#toRemove,1 do
-                        sim.removeObject(toRemove[j])
-                    end
-                end
-            end
-        end
-        
-        sim.setModelProperty(modelCopy,0)
-        return modelCopy
+        node.name=sim.getObjectAlias(shape)
+        retVal[#retVal+1]=node
     end
+    sim.removeObjects(shapes)
+    return retVal
+end
 
-    exportFuncs.newNode=exportFuncs.newNode or function(t)
-        assert(type(t)=='table','bad type')
-        local name=table.remove(t,1)
-        t[0]=name
-        return t
+function _S.urdf.getObjectName(objectHandle,info)
+    local n=sim.getObjectAliasRelative(objectHandle,info.base,7)
+    n=n:gsub('%W','')
+    if n=='' then return 'robot_base' end
+    return n
+end
+
+
+function _S.urdf.getShapeGeometryNode(shape,name,info)
+    local geometryNode=_S.urdf.newNode{'geometry'}
+    local r,pureType,dims=sim.getShapeGeomInfo(shape)
+    local pure=(r&2)>0
+    local x,y,z=dims[1],dims[2],dims[3]
+    if pure and pureType==sim.primitiveshape_cuboid then
+        local boxNode=_S.urdf.newNode{'box',size=string.format('%f %f %f',x,y,z)}
+        table.insert(geometryNode,boxNode)
+    elseif pure and pureType==sim.primitiveshape_spheroid then
+        assert(math.abs(x-y)<1e-3 and math.abs(y-z)<1e-3,'incosistent X/Y/Z dimension in sphere')
+        local sphereNode=_S.urdf.newNode{'sphere',radius=x/2}
+        table.insert(geometryNode,sphereNode)
+    elseif pure and pureType==sim.primitiveshape_cylinder then
+        assert(math.abs(x-y)<1e-3,'incosistent X/Y dimension in cylinder')
+        local cylinderNode=_S.urdf.newNode{'cylinder',radius=x/2,length=z}
+        table.insert(geometryNode,cylinderNode)
+    else
+--        local fn=string.format('%s_%s.dae',info.baseFile,name)
+--        simAssimp.exportShapes({shape},fn,'collada',1.0,simAssimp.upVector.z,4+512)
+        local fn=string.format('%s_%s.dae',info.baseFile,name)
+        simAssimp.exportShapes({shape},fn,'collada',1.0,simAssimp.upVector.z,4+512)
+        local meshNode=_S.urdf.newNode{'mesh',filename='file://'..fn}
+        table.insert(geometryNode,meshNode)
     end
+    return geometryNode
+end
 
-    exportFuncs.toXML=exportFuncs.toXML or function(exportFuncs,node,level)
-        level=level or 0
-        local indent=''; for i=1,level do indent=indent..'    ' end
-        local xml=''
-        if level==0 then xml=xml..'<?xml version="1.0"?>\n' end
-        xml=xml..indent..'<'..node[0]
-        for k,v in pairs(node) do
-            if type(k)~='number' then
-                for c,r in pairs{['"']='&quot;',['<']='&lt;',['>']='&gt;'} do v=string.gsub(v,c,r) end
-                xml=xml..' '..k..'="'..v..'"'
-            end
-        end
-        if #node>0 then
-            xml=xml..'>\n'
-            for i,child in ipairs(node) do
-                xml=xml..exportFuncs.toXML(exportFuncs,child,level+1)
-            end
-            xml=xml..indent..'</'..node[0]..'>\n'
-        else
-            xml=xml..' />\n'
-        end
-        return xml
-    end
-
-    exportFuncs.getObjectName=exportFuncs.getObjectName or function(exportFuncs,objectHandle)
-        local baseHandle=sim.getObject(':',{proxy=objectHandle})
-        local n=sim.getObjectAliasRelative(objectHandle,baseHandle,7)
-        n=n:gsub('%W','')
-        if n=='' then return 'robot_base' end
-        return n
-    end
-
-    exportFuncs.getShapeGeometryNode=exportFuncs.getShapeGeometryNode or function(exportFuncs,shapeHandle,baseName)
-        local geometryNode=exportFuncs.newNode{'geometry'}
-        local r,pureType,dims=sim.getShapeGeomInfo(shapeHandle)
-        local pure=(r&2)>0
-        local x,y,z=dims[1],dims[2],dims[3]
-        if pure and pureType==sim.pure_primitive_cuboid then
-            local boxNode=exportFuncs.newNode{'box',size=string.format('%f %f %f',x,y,z)}
-            table.insert(geometryNode,boxNode)
-        elseif pure and pureType==sim.pure_primitive_spheroid then
-            assert(math.abs(x-y)<1e-3 and math.abs(y-z)<1e-3,'incosistent X/Y/Z dimension in sphere')
-            local sphereNode=exportFuncs.newNode{'sphere',radius=x/2}
-            table.insert(geometryNode,sphereNode)
-        elseif pure and pureType==sim.pure_primitive_cylinder then
-            assert(math.abs(x-y)<1e-3,'incosistent X/Y dimension in cylinder')
-            local cylinderNode=exportFuncs.newNode{'cylinder',radius=x/2,length=z}
-            table.insert(geometryNode,cylinderNode)
-        else
-            local fn=string.format('%s_%s.dae',baseName,exportFuncs.getObjectName(exportFuncs,shapeHandle))
-            simAssimp.exportShapes({shapeHandle},fn,'collada',1.0,simAssimp.upVector.z,4+512)
-            local meshNode=exportFuncs.newNode{'mesh',filename='file://'..fn}
-            table.insert(geometryNode,meshNode)
-        end
-        return geometryNode
-    end
-
-    exportFuncs.matrixToRPY=exportFuncs.matrixToRPY or function(exportFuncs,m,alternateSolution)
-        -- Convert a 3x3 rotation matrix to roll-pitch-yaw coordinates.
-        -- URDF's rpy are the Z1-Y2-X3 Tait-Bryan angles.
-        -- See https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
-        if getmetatable(m)~=Matrix then
-            assert(type(m)=='table','table expected')
-            assert(#m==9,'not a 3x3 matrix (9 values expected)')
-            m=Matrix(3,3,m)
-        end
-        assert(m:sameshape{3,3},'not a 3x3 matrix')
-        local r,p,y=0,0,0
-        if math.abs(m[3][1])>=1-1e-12 then
-            y=0
-            if m[3][1]<0 then
-                p=math.pi/2
-                r=math.atan2(m[1][2],m[1][3])
-            else
-                p=-math.pi/2
-                r=math.atan2(-m[1][2],-m[1][3])
-            end
-        else
-            if alternateSolution then
-                p=-math.asin(m[3][1])
-            else
-                p=math.pi+math.asin(m[3][1])
-            end
-            r=math.atan2(m[3][2]/math.cos(p),m[3][3]/math.cos(p))
-            y=math.atan2(m[2][1]/math.cos(p),m[1][1]/math.cos(p))
-        end
-        return {r,p,y}
-    end
-
-    exportFuncs.matrixToXYZRPY=exportFuncs.matrixToXYZRPY or function(exportFuncs,m,alternateSolution)
-        if getmetatable(m)~=Matrix then
-            assert(type(m)=='table','table expected')
-            assert(#m==12 or #m==16,'not a 4x4 matrix (12 or 16 values expected)')
-            m=Matrix(#m//4,4,m)
-        end
-        assert(m:sameshape{3,4} or m:sameshape{4,4},'not a 4x4 matrix')
-        local R,t=m:slice(1,1,3,3),m:slice(1,4,3,4)
-        local xyz={t[1],t[2],t[3]}
-        local rpy=exportFuncs.matrixToRPY(exportFuncs,R,alternateSolution)
-        return xyz,rpy
-    end
-
-    exportFuncs.getShapeOriginNode=exportFuncs.getShapeOriginNode or function(exportFuncs,shapeHandle,parentHandle)
-        local originNode=exportFuncs.newNode{'origin'}
-        local m=sim.getObjectMatrix(shapeHandle,parentHandle)
-        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
-        originNode.xyz=string.format('%f %f %f',unpack(xyz))
-        originNode.rpy=string.format('%f %f %f',unpack(rpy))
-        return originNode
-    end
-
-    exportFuncs.getLinkInertialNode=exportFuncs.getLinkInertialNode or function(exportFuncs,linkHandle)
-        local inertialNode=exportFuncs.newNode{'inertial'}
-        local mi,mt=sim.getShapeInertia(linkHandle)
-        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,mt)
-        table.insert(inertialNode,exportFuncs.newNode{'origin',
-            xyz=string.format('%f %f %f',unpack(xyz)),
-            rpy=string.format('%f %f %f',unpack(rpy)),
-        })
-        table.insert(inertialNode,exportFuncs.newNode{'inertia',
-            ixx=mi[1],
-            ixy=(mi[2]+mi[4])/2,
-            ixz=(mi[3]+mi[7])/2,
-            iyy=mi[5],
-            iyz=(mi[6]+mi[8])/2,
-            izz=mi[9],
-        })
-        table.insert(inertialNode,exportFuncs.newNode{'mass',value=sim.getShapeMass(linkHandle)})
-        return inertialNode
-    end
-
-    exportFuncs.getLinkCollisionNode=exportFuncs.getLinkCollisionNode or function(exportFuncs,linkHandle,baseName)
-        local collisionNode=exportFuncs.newNode{'collision'}
-        table.insert(collisionNode,exportFuncs.getShapeOriginNode(exportFuncs,linkHandle,linkHandle))
-        table.insert(collisionNode,exportFuncs.getShapeGeometryNode(exportFuncs,linkHandle,baseName))
-        return collisionNode
-    end
-
-    exportFuncs.getVisuals=exportFuncs.getVisuals or function(exportFuncs,linkHandle)
-        local visuals={}
-        for i,visual in ipairs(sim.getObjectsInTree(linkHandle,sim.object_shape_type,3)) do
-            local resp=sim.getObjectInt32Param(visual,sim.shapeintparam_respondable)>0
-            if not resp then table.insert(visuals,visual) end
-        end
-        return visuals
-    end
-
-    exportFuncs.getLinkVisualNode=exportFuncs.getLinkVisualNode or function(exportFuncs,visualHandle,linkHandle,baseName)
-        local visualNode=exportFuncs.newNode{'visual'}
-        table.insert(visualNode,exportFuncs.getShapeOriginNode(exportFuncs,visualHandle,linkHandle))
-        table.insert(visualNode,exportFuncs.getShapeGeometryNode(exportFuncs,visualHandle,baseName))
-        local materialNode=exportFuncs.newNode{'material',name=exportFuncs.getObjectName(exportFuncs,visualHandle)..'_material'}
-        local r,col=sim.getShapeColor(visualHandle,nil,sim.colorcomponent_ambient_diffuse)
-        local colorNode=exportFuncs.newNode{'color',rgba=string.format('%f %f %f 1.0',unpack(col))}
-        table.insert(materialNode,colorNode)
-        table.insert(visualNode,materialNode)
-        return visualNode
-    end
-
-    exportFuncs.getLinkNode=exportFuncs.getLinkNode or function(exportFuncs,linkHandle,baseName)
-        local linkNode=exportFuncs.newNode{'link',name=exportFuncs.getObjectName(exportFuncs,linkHandle)}
-        table.insert(linkNode,exportFuncs.getLinkInertialNode(exportFuncs,linkHandle))
-        table.insert(linkNode,exportFuncs.getLinkCollisionNode(exportFuncs,linkHandle,baseName))
-        local visuals=exportFuncs.getVisuals(exportFuncs,linkHandle)
-        if #visuals>1 then
-            error('only one visual per link is supported') -- maybe group shapes instead?
-        elseif #visuals==1 then
-            table.insert(linkNode,exportFuncs.getLinkVisualNode(exportFuncs,visuals[1],linkHandle,baseName))
-        end
-        return linkNode
-    end
-
-    exportFuncs.getJointType=exportFuncs.getJointType or function(exportFuncs,jointHandle)
+function _S.urdf.getJointType(jointHandle)
+    local retVal='fixed'
+    if sim.getObjectType(jointHandle)==sim.object_joint_type then
         local jointType=sim.getJointType(jointHandle)
         local cyclic,interval=sim.getJointInterval(jointHandle)
         if jointType==sim.joint_revolute_subtype then
-            return cyclic and 'continuous' or 'revolute'
+            retVal=cyclic and 'continuous' or 'revolute'
         elseif jointType==sim.joint_prismatic_subtype then
-            return 'prismatic'
-        elseif jointType==sim.joint_spherical_subtype then
-            return 'fixed'
-        else
-            return 'fixed'
+            retVal='prismatic'
         end
     end
+    return retVal
+end
 
-    exportFuncs.getJointAxisNode=exportFuncs.getJointAxisNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
-        return exportFuncs.newNode{'axis',xyz='0 0 1'}
-    end
-
-    exportFuncs.getJointLimitNode=exportFuncs.getJointLimitNode or function(exportFuncs,jointHandle)
+function _S.urdf.getJointLimitNode(jointHandle)
+    if sim.getObjectType(jointHandle)==sim.object_joint_type then
         local cyclic,interval=sim.getJointInterval(jointHandle)
         if not cyclic then
-            local limitNode=exportFuncs.newNode{'limit'}
-            limitNode.lower=interval[1]
-            limitNode.upper=interval[1]+interval[2]
-            limitNode.effort=sim.getJointMaxForce(jointHandle)
-            limitNode.velocity=sim.getObjectFloatParam(jointHandle,sim.jointfloatparam_upper_limit)
+            local p=sim.getJointPosition(jointHandle)
+            local limitNode=_S.urdf.newNode{'limit'}
+            limitNode.lower=interval[1]-p
+            limitNode.upper=interval[1]-p+interval[2]
+            limitNode.effort=sim.getJointTargetForce(jointHandle)
+            limitNode.velocity=sim.getObjectFloatParam(jointHandle,sim.jointfloatparam_maxvel)
             return limitNode
         end
     end
+end
 
-    exportFuncs.getJointOriginNode=exportFuncs.getJointOriginNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
-        local originNode=exportFuncs.newNode{'origin'}
-        local m=sim.getObjectMatrix(childHandle,parentHandle)
-        local xyz,rpy=exportFuncs.matrixToXYZRPY(exportFuncs,m)
-        originNode.xyz=string.format('%f %f %f',unpack(xyz))
-        originNode.rpy=string.format('%f %f %f',unpack(rpy))
-        return originNode
+function _S.urdf.getJointOriginNode(jointHandle,prevJoint)
+    local originNode=_S.urdf.newNode{'origin'}
+    local m=sim.getObjectMatrix(jointHandle|sim.handleflag_reljointbaseframe,prevJoint)
+    local xyz,rpy=_S.urdf.matrixToXYZRPY(m)
+    originNode.xyz=string.format('%f %f %f',unpack(xyz))
+    originNode.rpy=string.format('%f %f %f',unpack(rpy))
+    return originNode
+end
+
+function _S.urdf.getJointNode(jointHandle,parentHandle,childHandle,prevJoint,info)
+    local jointNode=_S.urdf.newNode{'joint'}
+    jointNode.name=_S.urdf.getObjectName(jointHandle,info)
+    jointNode.type=_S.urdf.getJointType(jointHandle)
+    table.insert(jointNode,_S.urdf.newNode{'axis',xyz='0 0 1'})
+    local limitNode=_S.urdf.getJointLimitNode(jointHandle)
+    if limitNode~=nil then table.insert(jointNode,limitNode) end
+    table.insert(jointNode,_S.urdf.newNode{'parent',link=_S.urdf.getObjectName(parentHandle,info)})
+    table.insert(jointNode,_S.urdf.newNode{'child',link=_S.urdf.getObjectName(childHandle,info)})
+    table.insert(jointNode,_S.urdf.getJointOriginNode(jointHandle,prevJoint))
+    return jointNode
+end
+
+function _S.urdf.replaceDummies(object)
+    local ot=sim.getObjectType(object)
+    if ot==sim.object_dummy_type and (sim.getObjectInt32Param(object,sim.objintparam_visible)~=0) then
+        local dummyShape=sim.createPrimitiveShape(sim.primitiveshape_cuboid,{0.01,0.01,0.01})
+        sim.setObjectAlias(dummyShape,sim.getObjectAlias(object))
+        sim.setObjectColor(dummyShape,0,sim.colorcomponent_ambient_diffuse,{1,0,0})
+        sim.setObjectPose(dummyShape,sim.handle_world,sim.getObjectPose(object,sim.handle_world))
+        sim.setObjectParent(dummyShape,sim.getObjectParent(object),true)
+        sim.setObjectParent(object,dummyShape,true)
+        sim.removeObjects({object})
+        object=dummyShape
     end
-
-    exportFuncs.getJointNode=exportFuncs.getJointNode or function(exportFuncs,jointHandle,parentHandle,childHandle)
-        local jointNode=exportFuncs.newNode{'joint'}
-        jointNode.name=exportFuncs.getObjectName(exportFuncs,jointHandle)
-        jointNode.type=exportFuncs.getJointType(exportFuncs,jointHandle)
-        table.insert(jointNode,exportFuncs.getJointAxisNode(exportFuncs,jointHandle,parentHandle,childHandle))
-        local limitNode=exportFuncs.getJointLimitNode(exportFuncs,jointHandle)
-        if limitNode~=nil then table.insert(jointNode,limitNode) end
-        table.insert(jointNode,exportFuncs.newNode{'parent',link=exportFuncs.getObjectName(exportFuncs,parentHandle)})
-        table.insert(jointNode,exportFuncs.newNode{'child',link=exportFuncs.getObjectName(exportFuncs,childHandle)})
-        table.insert(jointNode,exportFuncs.getJointOriginNode(exportFuncs,jointHandle,parentHandle,childHandle))
-        return jointNode
+    local l=sim.getObjectsInTree(object,sim.handle_all,1|2)
+    for i=1,#l,1 do
+        _S.urdf.replaceDummies(l[i])
     end
+end
 
-    exportFuncs.getRobotNode=exportFuncs.getRobotNode or function(exportFuncs,modelHandle,baseName)
-        local robotNode=exportFuncs.newNode{'robot',name=exportFuncs.getObjectName(exportFuncs,modelHandle)}
-        local linkDone={}
-        for i,link in ipairs(exportFuncs.getModelHierarchy(exportFuncs,modelHandle)) do
-            for j,linkHandle in ipairs{link.parentHandle,link.childHandle} do
-                if not linkDone[linkHandle] then
-                    linkDone[linkHandle]=true
-                    table.insert(robotNode,exportFuncs.getLinkNode(exportFuncs,linkHandle,baseName))
+function _S.urdf.insertAuxShapes(object)
+    local l=sim.getObjectsInTree(object,sim.handle_all,1|2)
+    for i=1,#l,1 do
+        local ot=sim.getObjectType(object)
+        if ot==sim.object_joint_type or ot==sim.object_forcesensor_type then
+            local ct=sim.getObjectType(l[i])
+            if ct==sim.object_joint_type or ct==sim.object_forcesensor_type then
+                local auxShape=sim.createPrimitiveShape(sim.primitiveshape_spheroid,{0.05,0.05,0.05})
+                sim.setObjectAlias(auxShape,'auxShape')
+                sim.setObjectColor(auxShape,0,sim.colorcomponent_ambient_diffuse,{1,1,1})
+                sim.setObjectParent(auxShape,object,false)
+                sim.setObjectParent(l[i],auxShape,true)
+                l[#l+1]=auxShape
+            else
+                _S.urdf.insertAuxShapes(l[i])
+            end
+        else
+            _S.urdf.insertAuxShapes(l[i])
+        end
+    end
+end
+
+function _S.urdf.parseAndCreateMeshFiles(tree,object,parent,prevJoint,dynamicStage,info)
+    local objectType=sim.getObjectType(object)
+    local mprop=sim.getModelProperty(object)
+    if (mprop&sim.modelproperty_not_visible)==0 then -- ignore invisible models
+        if (mprop&sim.modelproperty_not_dynamic)~=0 then
+            if dynamicStage==1 then
+                dynamicStage=2 -- rest of the chain cannot be dynamic anymore
+            end
+        end
+        if objectType==sim.object_shape_type then
+            local linkNode=_S.urdf.newNode{'link',name=_S.urdf.getObjectName(object,info)}
+            local hidden=((sim.getObjectInt32Param(object,sim.objintparam_visibility_layer)&255)==0)
+            local dyn=(sim.getObjectInt32Param(object,sim.shapeintparam_static)==0)
+            if dyn then
+                if dynamicStage==0 then
+                    dynamicStage=1
+                end
+            else
+                if dynamicStage==1 then
+                    dynamicStage=2 -- rest of the chain cannot be dynamic anymore
                 end
             end
-            table.insert(robotNode,exportFuncs.getJointNode(exportFuncs,link.jointHandle,link.parentHandle,link.childHandle))
-        end
-        return robotNode
-    end
-
-    exportFuncs.getModelHierarchy=exportFuncs.getModelHierarchy or function(exportFuncs,modelHandle)
-        local links={}
-        for i,jointHandle in ipairs(sim.getObjectsInTree(modelHandle,sim.object_joint_type,1)) do
-            local parentHandle=sim.getObjectParent(jointHandle)
-            if sim.getObjectType(parentHandle)~=sim.object_joint_type then
-                for j,childHandle in ipairs(sim.getObjectsInTree(jointHandle,sim.object_shape_type,3)) do
-                    if sim.getObjectType(childHandle)~=sim.object_joint_type then
-                        local link={
-                            parentHandle=parentHandle,
-                            jointHandle=jointHandle,
-                            childHandle=childHandle,
-                        }
-                        table.insert(links,link)
+            local visuals={}
+            if dynamicStage==1 then
+                table.insert(linkNode,_S.urdf.getLinkInertialNode(object,prevJoint))
+            end
+            if dynamicStage==1 or hidden then
+                -- we create 1-n 'collision' nodes from that object
+                local cn=_S.urdf.getCollisionOrVisualNodes(object,prevJoint,info,true)
+                for i=1,#cn,1 do
+                    table.insert(linkNode,cn[i])
+                end
+            end
+            if not hidden then
+                visuals[#visuals+1]=object
+            end
+            _S.urdf.appendVisibleChildShapes(visuals,object,info)
+            -- we create 1-n 'visual' nodes from those objects
+            for j=1,#visuals,1 do
+                local cn=_S.urdf.getCollisionOrVisualNodes(visuals[j],prevJoint,info,false)
+                for i=1,#cn,1 do
+                    table.insert(linkNode,cn[i])
+                end
+            end
+            table.insert(tree,linkNode)
+            local firstJoints=_S.urdf.getFirstJoints(object,dynamicStage)
+            for i=1,#firstJoints,1 do
+                tree=_S.urdf.parseAndCreateMeshFiles(tree,firstJoints[i].joint,object,prevJoint,firstJoints[i].dynamicStage,info)
+            end
+        elseif objectType==sim.object_joint_type or objectType==sim.object_forcesensor_type then
+            local child=sim.getObjectChild(object,0)
+            if child~=-1 then
+                local mprop=sim.getModelProperty(child)
+                if (mprop&sim.modelproperty_not_visible)~=0 then -- ignore invisible models
+                    child=-1
+                else
+                    local childT=sim.getObjectType(child)
+                    if childT~=sim.object_shape_type then
+                        child=-1 -- we only take into account joints that have at least one shape in-between
                     end
                 end
             end
+            if parent~=-1 and child~=-1 then
+                table.insert(tree,_S.urdf.getJointNode(object,parent,child,prevJoint,info))
+                if objectType==sim.object_joint_type and sim.getJointMode(object)~=sim.jointmode_dynamic and dynamicStage==1 then
+                    dynamicStage=2
+                end
+                prevJoint=object
+                tree=_S.urdf.parseAndCreateMeshFiles(tree,child,object,prevJoint,dynamicStage,info)
+            end
         end
-        return links
     end
-
-    if outputMode=='f' then return exportFuncs end
-    local simplifiedModel=exportFuncs.createSimplifiedModel(modelHandle)
-    local tree=exportFuncs.getRobotNode(exportFuncs,simplifiedModel,baseName)
-    sim.removeModel(simplifiedModel)
-    if outputMode=='tree' then return tree end
-    local xml=exportFuncs.toXML(exportFuncs,tree)
-    if outputMode=='string' then return xml end
-    if outputMode=='file' then
-        local f=io.open(fileName,'w+')
-        f:write(xml)
-        f:close()
-        return tree
-    end
-    error('unknown outputMode: '..outputMode)
+    return tree
 end
 
 function simURDF.sendTF(modelHandle,fileName)

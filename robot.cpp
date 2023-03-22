@@ -3,7 +3,7 @@
 #include <string>
 
 
-robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr)
+robot::robot(std::string filenameOrUrdf,int options,const char* packageReplaceStr)
 {
     if (filenameOrUrdf.compare(0, 5, "<?xml") == 0) {
         openString(filenameOrUrdf);
@@ -11,11 +11,16 @@ robot::robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,
         openFile(filenameOrUrdf);
     }
 
-    this->initRobotFromDoc(hideCollisionLinks, hideJoints, convexDecomposeNonConvexCollidables, createVisualIfNone, convexHull, centerAboveGround, makeModel, noSelfCollision, positionCtrl,packageReplaceStr);
+    this->initRobotFromDoc(options,packageReplaceStr);
 }
 
-void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr)
+void robot::initRobotFromDoc(int options,const char* packageReplaceStr)
 {
+    bool hideJoints=(options&2)==0;
+    bool centerAboveGround=(options&32)==0;
+    bool makeModel=(options&64)==0;
+    bool noSelfCollision=(options&128)==0;
+    bool positionCtrl=(options&256)==0;
     robotElement = doc.FirstChildElement("robot");
     if(robotElement==nullptr)
     {
@@ -40,40 +45,35 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     printToConsole(sim_verbosity_scriptinfos,txt.c_str());
 
     createJoints(hideJoints,positionCtrl);
-    createLinks(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,convexHull);
+    createLinks(options);
     createSensors();
 
-    std::vector<int> parentlessObjects;
     std::vector<int> allShapes;
     std::vector<int> allObjects;
     std::vector<int> allSensors;
-    for (int i=0;i<int(vLinks.size());i++)
+    for (size_t i=0;i<vLinks.size();i++)
     {
-        if (simGetObjectParent(vLinks[i]->nLinkVisual)==-1)
-            parentlessObjects.push_back(vLinks[i]->nLinkVisual);
-        allObjects.push_back(vLinks[i]->nLinkVisual);
-        allShapes.push_back(vLinks[i]->nLinkVisual);
-
-        if (simGetObjectParent(vLinks[i]->nLinkCollision)==-1)
-            parentlessObjects.push_back(vLinks[i]->nLinkCollision);
-        allObjects.push_back(vLinks[i]->nLinkCollision);
-        allShapes.push_back(vLinks[i]->nLinkCollision);
-    }
-    for (int i=0;i<int(vJoints.size());i++)
-    {
-        if (vJoints[i]->nJoint!=-1)
+        if (vLinks[i]->nLinkVisual!=-1)
         {
-            if (simGetObjectParent(vJoints[i]->nJoint)==-1)
-                parentlessObjects.push_back(vJoints[i]->nJoint);
-            allObjects.push_back(vJoints[i]->nJoint);
+            allObjects.push_back(vLinks[i]->nLinkVisual);
+            allShapes.push_back(vLinks[i]->nLinkVisual);
+        }
+
+        if (vLinks[i]->nLinkCollision!=-1)
+        {
+            allObjects.push_back(vLinks[i]->nLinkCollision);
+            allShapes.push_back(vLinks[i]->nLinkCollision);
         }
     }
-    for (int i=0;i<int(vSensors.size());i++)
+    for (size_t i=0;i<vJoints.size();i++)
+    {
+        if (vJoints[i]->nJoint!=-1)
+            allObjects.push_back(vJoints[i]->nJoint);
+    }
+    for (size_t i=0;i<vSensors.size();i++)
     {
         if (vSensors[i]->nSensor!=-1)
         {
-            if (simGetObjectParent(vSensors[i]->nSensor)==-1)
-                parentlessObjects.push_back(vSensors[i]->nSensor);
             allObjects.push_back(vSensors[i]->nSensor);
             allSensors.push_back(vSensors[i]->nSensor);
         }
@@ -84,10 +84,21 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
         }
     }
 
+    std::vector<int> parentlessObjects;
+    for (size_t i=0;i<allObjects.size();i++)
+    {
+        if (simGetObjectParent(allObjects[i])==-1)
+        {
+            int p=simGetObjectProperty(allObjects[i]);
+            simSetObjectProperty(allObjects[i],p|sim_objectproperty_collapsed);
+            parentlessObjects.push_back(allObjects[i]);
+        }
+    }
+
     // If we want to alternate respondable mask:
     if (!noSelfCollision)
     {
-        for (int i=0;i<int(parentlessObjects.size());i++)
+        for (size_t i=0;i<parentlessObjects.size();i++)
             setLocalRespondableMaskCummulative_alternate(parentlessObjects[i],true);
     }
 
@@ -96,7 +107,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
     {
         bool firstValSet=false;
         C3Vector minV,maxV;
-        for (int shNb=0;shNb<int(allShapes.size());shNb++)
+        for (size_t shNb=0;shNb<allShapes.size();shNb++)
         {
             double* vertices;
             int verticesSize;
@@ -132,7 +143,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
 
         C3Vector shiftAmount((minV+maxV)*-0.5);
         shiftAmount(2)+=(maxV(2)-minV(2))*0.5;
-        for (int i=0;i<int(parentlessObjects.size());i++)
+        for (size_t i=0;i<parentlessObjects.size();i++)
         {
             C3Vector p;
             simGetObjectPosition(parentlessObjects[i],-1,p.data);
@@ -148,7 +159,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
         p|=sim_modelproperty_not_model;
         simSetModelProperty(parentlessObjects[0],p-sim_modelproperty_not_model);
 
-        for (int i=0;i<int(allObjects.size());i++)
+        for (size_t i=0;i<allObjects.size();i++)
         {
             if (allObjects[i]!=parentlessObjects[0])
             {
@@ -157,7 +168,7 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
             }
         }
 
-        for (int i=0;i<int(allSensors.size());i++)
+        for (size_t i=0;i<allSensors.size();i++)
         {
             if (allSensors[i]!=parentlessObjects[0])
             {
@@ -165,21 +176,20 @@ void robot::initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convex
                 simSetObjectProperty(allSensors[i],p|sim_objectproperty_dontshowasinsidemodel); // sensors are usually large and it is ok if they do not appear as inside of the model bounding box!
             }
         }
-
+        simSetObjectSel(parentlessObjects.data(),1);
     }
-
-    // Now select all new objects:
-    simSetObjectSel(allObjects.data(),int(allObjects.size()));
+    else
+        simSetObjectSel(allObjects.data(),int(allObjects.size()));
 }
 
 
 robot::~robot()
 {
-    for (int i=0;i<int(vLinks.size());i++)
+    for (size_t i=0;i<vLinks.size();i++)
         delete vLinks[i];
-    for (int i=0;i<int(vJoints.size());i++)
+    for (size_t i=0;i<vJoints.size();i++)
         delete vJoints[i];
-    for (int i=0;i<int(vSensors.size());i++)
+    for (size_t i=0;i<vSensors.size();i++)
         delete vSensors[i];
 }
 
@@ -609,19 +619,16 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
             if (vJoints.at(i)->jointType==0)
             { // revolute
                 simSetJointTargetForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitAngular,false);
-                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitAngular);
+                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_maxvel,vJoints.at(i)->velocityLimitAngular);
             }
             else
             { // prismatic
                 simSetJointTargetForce(vJoints.at(i)->nJoint,vJoints.at(i)->effortLimitLinear,false);
-                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_upper_limit,vJoints.at(i)->velocityLimitLinear);
+                simSetObjectFloatParam(vJoints.at(i)->nJoint,sim_jointfloatparam_maxvel,vJoints.at(i)->velocityLimitLinear);
             }
             // We turn the position control on:
             if (positionCtrl)
-            {
-                simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
-                simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_jointintparam_motor_enabled,1);
-            }
+                simSetObjectInt32Param(vJoints.at(i)->nJoint,sim_jointintparam_dynctrlmode,sim_jointdynctrl_position);
         }
 
         //Set the name:
@@ -637,7 +644,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         simSetObjectOrientation(vJoints.at(i)->nJoint,-1 ,vJoints.at(i)->jointBaseFrame.Q.getEulerAngles().data);
     }
 
-    //Set joint parentship between them (thes parentship will be remove before adding the joints)
+    //Set joint parentship between them (the parentship will be remove before adding the joints)
     for(size_t i = 0; i < vJoints.size() ; i++)
     {
         if (vJoints.at(i)->parentJoint.size()>0)
@@ -705,12 +712,12 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
     }
 }
 
-void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull)
+void robot::createLinks(int options)
 {
     for(size_t i = 0; i < vLinks.size() ; i++)
     {
         urdfLink *Link = vLinks.at(i);
-        Link->createLink(hideCollisionLinks,convexDecomposeNonConvexCollidables,createVisualIfNone,convexHull);
+        Link->createLink(options);
 
         // We attach the collision link to a joint. If the collision link isn't there, we use the visual link instead:
 
@@ -755,8 +762,6 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
             }
         }
 
-
-
         //set the transfrom matrix to the object
         simSetObjectPosition(effectiveLinkHandle,-1,trAbs.X.data);
         simSetObjectOrientation(effectiveLinkHandle,-1,trAbs.Q.getEulerAngles().data);
@@ -790,81 +795,79 @@ void robot::createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCol
 
 void robot::createSensors()
 {
-        for(size_t i = 0; i < vSensors.size() ; i++)
+    for(size_t i = 0; i < vSensors.size() ; i++)
+    {
+        sensor *Sensor = vSensors.at(i);
+        if (Sensor->gazeboSpec)
+            printToConsole(sim_verbosity_scripterrors,"sensor will not be created: the URDF specification is supported, but this is a Gazebo tag which is not documented as it seems.");
+        else
         {
-            sensor *Sensor = vSensors.at(i);
-            if (Sensor->gazeboSpec)
-                printToConsole(sim_verbosity_scripterrors,"sensor will not be created: the URDF specification is supported, but this is a Gazebo tag which is not documented as it seems.");
-            else
+            if (Sensor->cameraSensorPresent)
             {
-                if (Sensor->cameraSensorPresent)
-                {
-                    int intParams[4]={(int)Sensor->resolution[0],(int)Sensor->resolution[1],0,0};
-                    double floatParams[11]={Sensor->clippingPlanes[0],Sensor->clippingPlanes[1],60.0*piValue/180.0,0.2,0.2,0.4,0.0,0.0,0.0,0.0,0.0};
-                    Sensor->nSensor=simCreateVisionSensor(1,intParams,floatParams,nullptr);
-                    //Set the name:
-                    setSimObjectName(Sensor->nSensor,std::string(name+"_camera").c_str());
-                }
-                int proxSensHandle=-1;
-                if (Sensor->proximitySensorPresent)
-                { // Proximity sensors seem to be very very specific and not general / generic at all. How come?! I.e. a succession of ray description (with min/max distances) would do
-                    int intParams[8]={16,16,1,4,16,1,0,0};
-                    double floatParams[15]={0.0,0.48,0.1,0.1,0.1,0.1,0.0,0.02,0.02,30.0*piValue/180.0,piValue/2.0,0.0,0.02,0.0,0.0};
-                    proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
-                    //Set the name:
-                    setSimObjectName(proxSensHandle,std::string(Sensor->name+"_proximity").c_str());
-                }
-                // the doc doesn't state if a vision and proximity sensor can be declared at the same time...
-                if (proxSensHandle!=-1)
-                {
-                    if (Sensor->nSensor!=-1)
-                    {
-                        Sensor->nSensorAux=proxSensHandle;
-                        simSetObjectParent(Sensor->nSensorAux,Sensor->nSensor,true);
-                    }
-                    else
-                        Sensor->nSensor=proxSensHandle;
-                }
-
-                // Find the local configuration:
-                C7Vector sensorLocal;
-                sensorLocal.X.setData(Sensor->origin_xyz);
-                sensorLocal.Q=getQuaternionFromRpy(Sensor->origin_rpy);
-                C4Vector rot(0.0,0.0,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
-                sensorLocal.Q=sensorLocal.Q*rot;
-
-
-                // We attach the sensor to a link:
-                C7Vector x;
-                x.setIdentity();
-                int parentLinkIndex=getLinkPosition(Sensor->parentLink);
-                if (parentLinkIndex!=-1)
-                {
-                    if (vLinks.at(parentLinkIndex)->parent.size()>0)
-                    {
-                        int parentJointLinkIndex=getJointPosition(vLinks.at(parentLinkIndex)->parent);
-                        if (parentJointLinkIndex!=-1)
-                            x=vJoints.at(parentJointLinkIndex)->jointBaseFrame;
-                    }
-                }
-                C7Vector sensorGlobal(x*sensorLocal);
+                int intParams[4]={(int)Sensor->resolution[0],(int)Sensor->resolution[1],0,0};
+                double floatParams[11]={Sensor->clippingPlanes[0],Sensor->clippingPlanes[1],60.0*piValue/180.0,0.2,0.2,0.4,0.0,0.0,0.0,0.0,0.0};
+                Sensor->nSensor=simCreateVisionSensor(1,intParams,floatParams,nullptr);
+                //Set the name:
+                setSimObjectName(Sensor->nSensor,std::string(name+"_camera").c_str());
+            }
+            int proxSensHandle=-1;
+            if (Sensor->proximitySensorPresent)
+            { // Proximity sensors seem to be very very specific and not general / generic at all. How come?! I.e. a succession of ray description (with min/max distances) would do
+                int intParams[8]={16,16,1,4,16,1,0,0};
+                double floatParams[15]={0.0,0.48,0.1,0.1,0.1,0.1,0.0,0.02,0.02,30.0*piValue/180.0,piValue/2.0,0.0,0.02,0.0,0.0};
+                proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
+                //Set the name:
+                setSimObjectName(proxSensHandle,std::string(Sensor->name+"_proximity").c_str());
+            }
+            // the doc doesn't state if a vision and proximity sensor can be declared at the same time...
+            if (proxSensHandle!=-1)
+            {
                 if (Sensor->nSensor!=-1)
                 {
-                    simSetObjectPosition(Sensor->nSensor,-1,sensorGlobal.X.data);
-                    simSetObjectOrientation(Sensor->nSensor,-1,sensorGlobal.Q.getEulerAngles().data);
+                    Sensor->nSensorAux=proxSensHandle;
+                    simSetObjectParent(Sensor->nSensorAux,Sensor->nSensor,true);
                 }
-                if ((parentLinkIndex!=-1)&&(Sensor->nSensor!=-1))
+                else
+                    Sensor->nSensor=proxSensHandle;
+            }
+
+            // Find the local configuration:
+            C7Vector sensorLocal;
+            sensorLocal.X.setData(Sensor->origin_xyz);
+            sensorLocal.Q=getQuaternionFromRpy(Sensor->origin_rpy);
+            C4Vector rot(0.0,0.0,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
+            sensorLocal.Q=sensorLocal.Q*rot;
+
+
+            // We attach the sensor to a link:
+            C7Vector x;
+            x.setIdentity();
+            int parentLinkIndex=getLinkPosition(Sensor->parentLink);
+            if (parentLinkIndex!=-1)
+            {
+                if (vLinks.at(parentLinkIndex)->parent.size()>0)
                 {
-                    if (vLinks.at(parentLinkIndex)->visuals.size()!=0)
-                        simSetObjectParent(Sensor->nSensor,vLinks.at(parentLinkIndex)->nLinkVisual,true);
-                    if (vLinks.at(parentLinkIndex)->collisions.size()!=0)
-                        simSetObjectParent(Sensor->nSensor,vLinks.at(parentLinkIndex)->nLinkCollision,true);
+                    int parentJointLinkIndex=getJointPosition(vLinks.at(parentLinkIndex)->parent);
+                    if (parentJointLinkIndex!=-1)
+                        x=vJoints.at(parentJointLinkIndex)->jointBaseFrame;
                 }
             }
+            C7Vector sensorGlobal(x*sensorLocal);
+            if (Sensor->nSensor!=-1)
+            {
+                simSetObjectPosition(Sensor->nSensor,-1,sensorGlobal.X.data);
+                simSetObjectOrientation(Sensor->nSensor,-1,sensorGlobal.Q.getEulerAngles().data);
+            }
+            if ((parentLinkIndex!=-1)&&(Sensor->nSensor!=-1))
+            {
+                if (vLinks.at(parentLinkIndex)->visuals.size()!=0)
+                    simSetObjectParent(Sensor->nSensor,vLinks.at(parentLinkIndex)->nLinkVisual,true);
+                if (vLinks.at(parentLinkIndex)->collisions.size()!=0)
+                    simSetObjectParent(Sensor->nSensor,vLinks.at(parentLinkIndex)->nLinkCollision,true);
+            }
         }
+    }
 }
-
-
 
 int robot::getJointPosition(std::string jointName)
 {

@@ -27,20 +27,20 @@ public:
     std::string name;
     
     //Functions
-    robot(std::string filenameOrUrdf,bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr);
+    robot(std::string filenameOrUrdf,int options,const char* packageReplaceStr);
     ~robot();
 
     void openString(std::string urdf); //opens a URDF from string
     void openFile(std::string filenameAndPath); //opens the filenamAndPath which is given by a file dialog and sets packagePath
 
-    void initRobotFromDoc(bool hideCollisionLinks,bool hideJoints,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull,bool centerAboveGround,bool makeModel,bool noSelfCollision,bool positionCtrl,const char* packageReplaceStr);
+    void initRobotFromDoc(int options,const char* packageReplaceStr);
     
     void readJoints();
     void readLinks(const char* packageReplaceStr);
     void readSensors();
 
     void createJoints(bool hideJoints,bool positionCtrl);
-    void createLinks(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull);
+    void createLinks(int options);
     void createSensors();
 
     int getJointPosition(std::string jointName);

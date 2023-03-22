@@ -251,14 +251,21 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
 }
 
 //Write
-void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexCollidables,bool createVisualIfNone,bool convexHull)
+void urdfLink::createLink(int options)
 {
+    bool hideCollisionLinks=(options&1)==0;
+    bool convexDecomposeNonConvexCollidables=(options&4)!=0;
+    bool createVisualIfNone=(options&8)!=0;
+    bool convexHull=(options&512)!=0;
+    bool shapeAtJointLoc=(options&1024)!=0;
+
     std::string txt("creating link '"+name+"'...");
     printToConsole(sim_verbosity_scriptinfos,txt.c_str());
 
     // Visuals
     std::vector<urdfVisualOrCollision>::iterator it;
-    for (it=visuals.begin(); it!=visuals.end(); it++) {
+    for (it=visuals.begin(); it!=visuals.end(); it++)
+    {
         urdfVisualOrCollision &visual = *it;
         
         if(!visual.meshFilename.empty())
@@ -318,7 +325,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     }
 
     //collisions
-    for (it=collisions.begin(); it!=collisions.end(); it++) {
+    for (it=collisions.begin(); it!=collisions.end(); it++)
+    {
         urdfVisualOrCollision &collision = *it;
 
         if(!collision.meshFilename.empty())
@@ -438,7 +446,8 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
                 addVisual();
                 currentVisual().n = newShape;
             }
-        } else
+        }
+        else
         { // This is an empty link (no visual and no collision); create a dummy visual
             double dummySize[3]={0.0005,0.0005,0.0005};
             addVisual();
@@ -460,9 +469,12 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
     const float specular[3]={0.2f,0.2f,0.2f};
     int *shapes = new int[visuals.size()];
     int validShapes = 0;
-    for (unsigned int i=0; i<visuals.size(); i++) {
+    C7Vector desiredShapeFramePose;
+    for (unsigned int i=0; i<visuals.size(); i++)
+    {
         urdfVisualOrCollision &visual = visuals[i];
-        if (visual.n!=-1) {
+        if (visual.n!=-1)
+        {
             if (visual.hasColor)
             {
                 simSetShapeColor(visual.n,nullptr,sim_colorcomponent_ambient_diffuse,visual.rgba);
@@ -472,6 +484,9 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             C7Vector frame;
             frame.X.setData(visual.xyz);
             frame.Q=getQuaternionFromRpy(visual.rpy);
+
+            if (validShapes==0)
+                desiredShapeFramePose=frame; // pick the first visual item
 
             C7Vector initVisualFrame;
             simGetObjectPosition(visual.n,-1,initVisualFrame.X.data);
@@ -488,10 +503,24 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         }
     }
     //std::cout << std::flush;
-    if (validShapes > 1) {
-        nLinkVisual = simGroupShapes(shapes, validShapes);
-    } else if (validShapes == 1) {
+    if (validShapes > 1)
+        nLinkVisual = simGroupShapes(shapes,validShapes);
+    else if (validShapes == 1)
         nLinkVisual = shapes[0];
+    if (validShapes>0)
+    {
+        if (shapeAtJointLoc)
+        { // try to place the origin of the shape at the joint's location
+            double identity[7]={0.0,0.0,0.0,0.0,0.0,0.0,1.0};
+            simRelocateShapeFrame(nLinkVisual,identity);
+        }
+        else
+        {
+            double p[7];
+            desiredShapeFramePose.getData(p,true);
+            simRelocateShapeFrame(nLinkVisual,p);
+        }
+        simAlignShapeBB(nLinkVisual,nullptr);
     }
 
     // Grouping collisions
@@ -503,6 +532,9 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
             C7Vector frame;
             frame.X.setData(collision.xyz);
             frame.Q=getQuaternionFromRpy(collision.rpy);
+
+            if (validShapes==0)
+                desiredShapeFramePose=frame; // pick the first collision item
 
             C7Vector initCollisionFrame;
             simGetObjectPosition(collision.n,-1,initCollisionFrame.X.data);
@@ -519,11 +551,26 @@ void urdfLink::createLink(bool hideCollisionLinks,bool convexDecomposeNonConvexC
         }
     }
     //std::cout << std::flush;
-    if (validShapes > 1) {
+    if (validShapes > 1)
         nLinkCollision = simGroupShapes(shapes, validShapes);
-    } else if (validShapes == 1) {
+    else if (validShapes == 1)
         nLinkCollision = shapes[0];
+    if (validShapes>0)
+    {
+        if (shapeAtJointLoc)
+        { // try to place the origin of the shape at the joint's location
+            double identity[7]={0.0,0.0,0.0,0.0,0.0,0.0,1.0};
+            simRelocateShapeFrame(nLinkCollision,identity);
+        }
+        else
+        {
+            double p[7];
+            desiredShapeFramePose.getData(p,true);
+            simRelocateShapeFrame(nLinkCollision,p);
+        }
+        simAlignShapeBB(nLinkCollision,nullptr);
     }
+
 
     // Inertia
     if (inertiaPresent)

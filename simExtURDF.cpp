@@ -32,7 +32,7 @@
                             // 12: Urdf --> URDF
                             // 13: removed C++ UI, now provided via add-on
                             // 14: various rework and bug fix
-                            // 15: doubles
+                            // 15: doubles + new shapes
 
 static LIBRARY simLib;
 
@@ -55,7 +55,7 @@ void simImportUrdfCallback(SScriptCallBack* p)
         std::string packageStr;
         if ( (inData->size()>=3)&&(inData->at(2).stringData.size()==1) )
             packageStr=inData->at(2).stringData[0];
-        robot Robot(inData->at(0).stringData[0].c_str(), (options&1)==0, (options&2)==0,options&4,options&8,options&512,(options&32)==0,(options&64)==0,(options&128)==0,(options&256)==0,packageStr.c_str());
+        robot Robot(inData->at(0).stringData[0].c_str(),options,packageStr.c_str());
         char* name = (char*)simCreateBuffer(int(Robot.name.length()+1));
         memcpy((void*) name, (void*) Robot.name.c_str(), Robot.name.length()+1);
         D.pushOutData(CScriptFunctionDataItem(name));
