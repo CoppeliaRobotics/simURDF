@@ -101,12 +101,6 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0,string packageStrReplace=nil)",simImportUrdfCallback);
     simRegisterScriptCallbackFunction("simURDF.importFile@URDF","string robot_name=simURDF.importFile(string fileAndPath,int options=0)",simImportUrdfCallback);
 
-    // Following for backward compatibility:
-    simRegisterScriptVariable("simExtImportUrdf","simURDF.import",-1);
-    simRegisterScriptVariable("simExtImportUrdfFile","simURDF.importFile",-1);
-    simRegisterScriptCallbackFunction("simExtImportUrdf@URDF","Please use the simURDF.import notation instead",0);
-    simRegisterScriptCallbackFunction("simExtImportUrdfFile@URDF","Please use the simURDF.importFile notation instead",0);
-
     return(PLUGIN_VERSION);
 }
 
