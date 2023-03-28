@@ -11,7 +11,7 @@
 #include <simMath/3Vector.h>
 #include <simMath/7Vector.h>
 #include <simMath/3X3Matrix.h>
-#include <simMath/MyMath.h>
+#include <simMath/mathFuncs.h>
 
 #include "commonFunctions.h"
 

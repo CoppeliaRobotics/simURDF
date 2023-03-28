@@ -62,9 +62,9 @@ SOURCES += \
     ../include/simMath/3X3Matrix.cpp \
     ../include/simMath/4Vector.cpp \
     ../include/simMath/4X4Matrix.cpp \
-    ../include/simMath/MMatrix.cpp \
+    ../include/simMath/mXnMatrix.cpp \
     ../include/simMath/7Vector.cpp \
-    ../include/simMath/MyMath.cpp \
+    ../include/simMath/mathFuncs.cpp \
     ../include/simLib/simLib.cpp \
     ../include/simLib/scriptFunctionData.cpp \
     ../include/simLib/scriptFunctionDataItem.cpp \
@@ -82,9 +82,9 @@ HEADERS +=\
     ../include/simMath/3X3Matrix.h \
     ../include/simMath/4Vector.h \
     ../include/simMath/4X4Matrix.h \
-    ../include/simMath/MMatrix.h \
+    ../include/simMath/mXnMatrix.h \
     ../include/simMath/7Vector.h \
-    ../include/simMath/MyMath.h \
+    ../include/simMath/mathFuncs.h \
     ../include/simLib/simLib.h \
     ../include/simLib/scriptFunctionData.h \
     ../include/simLib/scriptFunctionDataItem.h \
