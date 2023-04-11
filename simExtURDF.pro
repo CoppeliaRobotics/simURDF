@@ -19,6 +19,7 @@ greaterThan(QT_MAJOR_VERSION,4): QT += widgets
 *-g++* {
     QMAKE_CXXFLAGS += -O3
     QMAKE_CXXFLAGS += -Wall
+    QMAKE_CXXFLAGS += -fvisibility=hidden
     QMAKE_CXXFLAGS += -Wno-unused-parameter
     QMAKE_CXXFLAGS += -Wno-strict-aliasing
     QMAKE_CXXFLAGS += -Wno-empty-body
