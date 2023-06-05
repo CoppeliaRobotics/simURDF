@@ -1,4 +1,4 @@
-#include "simExtURDF.h"
+#include "simURDF.h"
 #include <simLib/simLib.h>
 #include <iostream>
 #include <vector>
@@ -18,7 +18,7 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define PLUGIN_VERSION 15   // 1 until 20/1/2013 (1 was a very early beta)
+#define PLUGIN_VERSION 16   // 1 until 20/1/2013 (1 was a very early beta)
                             // 2 until 10/1/2014 (CoppeliaSim3.0.5)
                             // 3: new lock
                             // 4: since CoppeliaSim 3.1.2
@@ -33,6 +33,7 @@
                             // 13: removed C++ UI, now provided via add-on
                             // 14: various rework and bug fix
                             // 15: doubles + new shapes
+                            // 16: since CoppeliaSim 4.6 (new plugins)
 
 static LIBRARY simLib;
 
@@ -46,7 +47,7 @@ const int inArgs_IMPORT[]={
 void simImportUrdfCallback(SScriptCallBack* p)
 {
     CScriptFunctionData D;
-    if (D.readDataFromStack(p->stackID,inArgs_IMPORT,inArgs_IMPORT[0]-2,"simURDF.import"))
+    if (D.readDataFromStack(p->stackID,inArgs_IMPORT,inArgs_IMPORT[0]-2,nullptr))
     {
         std::vector<CScriptFunctionDataItem>* inData=D.getInDataPtr();
         int options=0;
@@ -64,7 +65,7 @@ void simImportUrdfCallback(SScriptCallBack* p)
     }
 }
 
-SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
+SIM_DLLEXPORT int simInit(const char* pluginName)
 {
      char curDirAndFile[1024];
  #ifdef _WIN32
@@ -86,36 +87,26 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
      simLib=loadSimLibrary(temp.c_str());
     if (simLib==nullptr)
     {
-        printf("simExtURDF: error: could not find or correctly load the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
+        simAddLog(pluginName,sim_verbosity_errors,"could not find or correctly load the CoppeliaSim library. Cannot start the plugin.");
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        printf("simExtURDF: error: could not find all required functions in the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
+        simAddLog(pluginName,sim_verbosity_errors,"could not find all required functions in the CoppeliaSim library. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppeliaSim will unload this plugin
     }
 
-    simRegisterScriptVariable("simURDF","require('simURDF')",0);
-
-    simRegisterScriptCallbackFunction("simURDF.import@URDF","string robot_name=simURDF.import(string urdf,int options=0,string packageStrReplace=nil)",simImportUrdfCallback);
-    simRegisterScriptCallbackFunction("simURDF.importFile@URDF","string robot_name=simURDF.importFile(string fileAndPath,int options=0)",simImportUrdfCallback);
+    simRegisterScriptCallbackFunction("import",nullptr,simImportUrdfCallback);
 
     return(PLUGIN_VERSION);
 }
 
-SIM_DLLEXPORT void simEnd()
+SIM_DLLEXPORT void simCleanup()
 {
     unloadSimLibrary(simLib); // release the library
 }
 
-SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
+SIM_DLLEXPORT void simMsg(int,int*,void*)
 {
-    int errorModeSaved;
-    simGetInt32Param(sim_intparam_error_report_mode,&errorModeSaved);
-    simSetInt32Param(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
-    void* retVal=nullptr;
-
-    simSetInt32Param(sim_intparam_error_report_mode,errorModeSaved); // restore previous settings
-    return(retVal);
 }

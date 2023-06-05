@@ -3,7 +3,7 @@ include(config.pri)
 QT -= core
 QT -= gui
 
-TARGET = simExtURDF
+TARGET = simURDF
 TEMPLATE = lib
 
 DEFINES -= UNICODE
@@ -52,7 +52,7 @@ unix:!macx {
 }
 
 SOURCES += \
-    simExtURDF.cpp \
+    simURDF.cpp \
     tinyxml2/tinyxml2.cpp \
     robot.cpp \
     link.cpp \
@@ -72,7 +72,7 @@ SOURCES += \
     rospackagehelper.cpp
 
 HEADERS +=\
-    simExtURDF.h \
+    simURDF.h \
     tinyxml2/tinyxml2.h \
     robot.h \
     link.h \

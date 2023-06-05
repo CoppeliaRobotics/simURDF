@@ -1,4 +1,9 @@
-local simURDF={}
+sim=require('sim')
+simAssimp=require('simAssimp')
+
+local simURDF=loadPlugin('simURDF')
+
+simURDF.importFile=simURDF.import
 
 function simURDF.export(origModel,fileName,options)
     options=options or 0
@@ -268,10 +273,30 @@ function _S.urdf.getCollisionOrVisualNodes(shape,prevJoint,info,isCollisionNode)
 end
 
 function _S.urdf.getObjectName(objectHandle,info)
+    local nm='robot_base'
+    if objectHandle~=info.base then
+        nm=sim.getObjectAlias(objectHandle)
+        local obj=-1
+        local i=-1
+        while obj~=objectHandle do
+            i=i+1
+            obj=sim.getObject('./'..nm,{index=i,proxy=info.base})
+        end
+        if i~=0 then
+            nm=nm..'_'..(i+1) -- there are several objects with the same alias!
+            if info.sameAliasWarning==nil then
+                info.sameAliasWarning=true
+                addLog(sim.verbosity_warnings,"found one or several objects with identical alias.")
+            end
+        end
+    end
+    return nm
+    --[[
     local n=sim.getObjectAliasRelative(objectHandle,info.base,7)
     n=n:gsub('%W','')
     if n=='' then return 'robot_base' end
     return n
+    --]]
 end
 
 

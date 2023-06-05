@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(simExtURDF)
+project(simURDF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MACOSX_RPATH 1)
@@ -17,10 +17,10 @@ list(APPEND CMAKE_MODULE_PATH ${COPPELIASIM_INCLUDE_DIR}/cmake)
 find_package(CoppeliaSim 4.5.0.0 REQUIRED)
 
 coppeliasim_add_plugin(
-    simExtURDF
+    simURDF
     LEGACY
     SOURCES
-    simExtURDF.cpp
+    simURDF.cpp
     tinyxml2/tinyxml2.cpp
     robot.cpp
     link.cpp
@@ -38,9 +38,10 @@ coppeliasim_add_plugin(
     ${COPPELIASIM_INCLUDE_DIR}/simLib/scriptFunctionData.cpp
     ${COPPELIASIM_INCLUDE_DIR}/simLib/scriptFunctionDataItem.cpp
 )
-target_compile_definitions(simExtURDF PRIVATE SIM_MATH_DOUBLE)
+target_compile_definitions(simURDF PRIVATE SIM_MATH_DOUBLE)
 coppeliasim_add_addon("simAddOnURDF importer.lua")
 coppeliasim_add_addon("simAddOnURDF exporter.lua")
 coppeliasim_add_lua(simURDF.lua)
+coppeliasim_add_lua(simURDF-ce.lua)
 coppeliasim_add_helpfile(simURDF.htm)
 coppeliasim_add_helpfile(simURDF.json SUBDIR index)
