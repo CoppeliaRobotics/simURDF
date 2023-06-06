@@ -3,6 +3,10 @@ function sysCall_info()
 end
 
 function sysCall_init()
+    sim=require('sim')
+    simUI=require('simUI')
+    simURDF=require('simURDF')
+    
     closeDialog()
 
     optionsInfo={
