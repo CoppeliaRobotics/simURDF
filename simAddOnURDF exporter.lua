@@ -1,11 +1,12 @@
+sim=require'sim'
+
 function sysCall_info()
     return {autoStart=false,menu='Exporters\nURDF exporter...'}
 end
 
 function sysCall_init()
-    sim=require('sim')
-    simUI=require('simUI')
-    simURDF=require('simURDF')
+    simUI=require'simUI'
+    simURDF=require'simURDF'
 
     closeDialog()
     local s=sim.getObjectSelection()
