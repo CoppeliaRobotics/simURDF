@@ -494,9 +494,9 @@ function _S.urdf.parseAndCreateMeshFiles(tree,object,parent,prevJoint,dynamicSta
 end
 
 function simURDF.sendTF(modelHandle,fileName)
-    if not simROS2 then
-        error('ROS2 plugin not available')
-    end
+    pcall(function()
+        simROS2=require'simROS2'
+    end)
     simROS2.importInterface('geometry_msgs/msg/TransformStamped')
     local tfs={}
     local ef=simURDF.export(modelHandle,fileName,'f')
