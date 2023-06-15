@@ -225,7 +225,7 @@ end
 
 function _S.urdf.getCollisionOrVisualNodes(shape,prevJoint,info,isCollisionNode)
     local retVal={}
-    local originalFramePose=sim.getObjectPose(shape,sim.handle_world)
+    local originalFramePose=sim.getObjectPose(shape)
     local shapes=sim.copyPasteObjects({shape},2+4+8+16+32)
     for i=1,#shapes,1 do
         local r,pureType,dims=sim.getShapeGeomInfo(shapes[i])
@@ -384,7 +384,7 @@ function _S.urdf.replaceDummies(object)
         local dummyShape=sim.createPrimitiveShape(sim.primitiveshape_cuboid,{0.01,0.01,0.01})
         sim.setObjectAlias(dummyShape,sim.getObjectAlias(object))
         sim.setObjectColor(dummyShape,0,sim.colorcomponent_ambient_diffuse,{1,0,0})
-        sim.setObjectPose(dummyShape,sim.handle_world,sim.getObjectPose(object,sim.handle_world))
+        sim.setObjectPose(dummyShape,sim.getObjectPose(object))
         sim.setObjectParent(dummyShape,sim.getObjectParent(object),true)
         sim.setObjectParent(object,dummyShape,true)
         sim.removeObjects({object})
