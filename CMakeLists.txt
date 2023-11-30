@@ -20,14 +20,14 @@ coppeliasim_add_plugin(
     simURDF
     LEGACY
     SOURCES
-    simURDF.cpp
-    tinyxml2/tinyxml2.cpp
-    robot.cpp
-    link.cpp
-    joint.cpp
-    sensor.cpp
-    commonFunctions.cpp
-    rospackagehelper.cpp
+    sourceCode/simURDF.cpp
+    external/tinyxml2/tinyxml2.cpp
+    sourceCode/robot.cpp
+    sourceCode/link.cpp
+    sourceCode/joint.cpp
+    sourceCode/sensor.cpp
+    sourceCode/commonFunctions.cpp
+    sourceCode/rospackagehelper.cpp
     ${COPPELIASIM_INCLUDE_DIR}/simMath/3Vector.cpp
     ${COPPELIASIM_INCLUDE_DIR}/simMath/3X3Matrix.cpp
     ${COPPELIASIM_INCLUDE_DIR}/simMath/4Vector.cpp
@@ -38,10 +38,11 @@ coppeliasim_add_plugin(
     ${COPPELIASIM_INCLUDE_DIR}/simLib/scriptFunctionData.cpp
     ${COPPELIASIM_INCLUDE_DIR}/simLib/scriptFunctionDataItem.cpp
 )
+target_include_directories(simURDF PRIVATE external)
 target_compile_definitions(simURDF PRIVATE SIM_MATH_DOUBLE)
-coppeliasim_add_addon("simAddOnURDF importer.lua")
-coppeliasim_add_addon("simAddOnURDF exporter.lua")
-coppeliasim_add_lua(simURDF.lua)
-coppeliasim_add_lua(simURDF-ce.lua)
-coppeliasim_add_helpfile(simURDF.htm)
-coppeliasim_add_helpfile(simURDF.json SUBDIR index)
+coppeliasim_add_addon("addOns/simAddOnURDF importer.lua")
+coppeliasim_add_addon("addOns/simAddOnURDF exporter.lua")
+coppeliasim_add_lua(lua/simURDF.lua)
+coppeliasim_add_lua(lua/simURDF-ce.lua)
+coppeliasim_add_helpfile(helpFiles/simURDF.htm)
+coppeliasim_add_helpfile(helpFiles/index/simURDF.json SUBDIR index)
