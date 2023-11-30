@@ -52,13 +52,14 @@ unix:!macx {
 }
 
 SOURCES += \
-    simURDF.cpp \
-    tinyxml2/tinyxml2.cpp \
-    robot.cpp \
-    link.cpp \
-    joint.cpp \
-    sensor.cpp \
-    commonFunctions.cpp \
+    external/tinyxml2/tinyxml2.cpp \
+    sourcecode/simURDF.cpp \
+    sourcecode/robot.cpp \
+    sourcecode/link.cpp \
+    sourcecode/joint.cpp \
+    sourcecode/sensor.cpp \
+    sourcecode/commonFunctions.cpp \
+    sourcecode/rospackagehelper.cpp \
     ../include/simMath/3Vector.cpp \
     ../include/simMath/3X3Matrix.cpp \
     ../include/simMath/4Vector.cpp \
@@ -69,16 +70,16 @@ SOURCES += \
     ../include/simLib/simLib.cpp \
     ../include/simLib/scriptFunctionData.cpp \
     ../include/simLib/scriptFunctionDataItem.cpp \
-    rospackagehelper.cpp
 
 HEADERS +=\
-    simURDF.h \
-    tinyxml2/tinyxml2.h \
-    robot.h \
-    link.h \
-    joint.h \
-    sensor.h \
-    commonFunctions.h \
+    external/tinyxml2/tinyxml2.h \
+    sourcecode/simURDF.h \
+    sourcecode/robot.h \
+    sourcecode/link.h \
+    sourcecode/joint.h \
+    sourcecode/sensor.h \
+    sourcecode/commonFunctions.h \
+    sourcecode/rospackagehelper.h \
     ../include/simMath/3Vector.h \
     ../include/simMath/3X3Matrix.h \
     ../include/simMath/4Vector.h \
@@ -89,7 +90,6 @@ HEADERS +=\
     ../include/simLib/simLib.h \
     ../include/simLib/scriptFunctionData.h \
     ../include/simLib/scriptFunctionDataItem.h \
-    rospackagehelper.h
 
 unix:!symbian {
     maemo5 {
