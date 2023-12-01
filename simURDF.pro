@@ -10,6 +10,7 @@ DEFINES -= UNICODE
 DEFINES += SIM_MATH_DOUBLE
 CONFIG += shared plugin
 INCLUDEPATH += "../include"
+INCLUDEPATH += "sourceCode"
 INCLUDEPATH += "external"
 
 *-msvc* {
@@ -53,13 +54,13 @@ unix:!macx {
 
 SOURCES += \
     external/tinyxml2/tinyxml2.cpp \
-    sourcecode/simURDF.cpp \
-    sourcecode/robot.cpp \
-    sourcecode/link.cpp \
-    sourcecode/joint.cpp \
-    sourcecode/sensor.cpp \
-    sourcecode/commonFunctions.cpp \
-    sourcecode/rospackagehelper.cpp \
+    sourceCode/simURDF.cpp \
+    sourceCode/robot.cpp \
+    sourceCode/link.cpp \
+    sourceCode/joint.cpp \
+    sourceCode/sensor.cpp \
+    sourceCode/commonFunctions.cpp \
+    sourceCode/rospackagehelper.cpp \
     ../include/simMath/3Vector.cpp \
     ../include/simMath/3X3Matrix.cpp \
     ../include/simMath/4Vector.cpp \
@@ -73,13 +74,13 @@ SOURCES += \
 
 HEADERS +=\
     external/tinyxml2/tinyxml2.h \
-    sourcecode/simURDF.h \
-    sourcecode/robot.h \
-    sourcecode/link.h \
-    sourcecode/joint.h \
-    sourcecode/sensor.h \
-    sourcecode/commonFunctions.h \
-    sourcecode/rospackagehelper.h \
+    sourceCode/simURDF.h \
+    sourceCode/robot.h \
+    sourceCode/link.h \
+    sourceCode/joint.h \
+    sourceCode/sensor.h \
+    sourceCode/commonFunctions.h \
+    sourceCode/rospackagehelper.h \
     ../include/simMath/3Vector.h \
     ../include/simMath/3X3Matrix.h \
     ../include/simMath/4Vector.h \
