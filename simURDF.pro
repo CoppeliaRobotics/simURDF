@@ -10,7 +10,7 @@ DEFINES -= UNICODE
 DEFINES += SIM_MATH_DOUBLE
 CONFIG += shared plugin
 INCLUDEPATH += "../include"
-greaterThan(QT_MAJOR_VERSION,4): QT += widgets
+INCLUDEPATH += "external"
 
 *-msvc* {
     QMAKE_CXXFLAGS += -O2
