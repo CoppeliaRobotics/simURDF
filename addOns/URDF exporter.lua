@@ -9,9 +9,9 @@ function sysCall_init()
     simURDF = require 'simURDF'
 
     closeDialog()
-    local s = sim.getObjectSelection()
+    local s = sim.getObjectSel()
     local model = nil
-    if s and #s == 1 then
+    if #s == 1 then
         if sim.getModelProperty(s[1]) & sim.modelproperty_not_model == 0 and sim.getObjectType(s[1]) ==
             sim.object_shape_type then model = s[1] end
     end
