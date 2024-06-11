@@ -36,16 +36,16 @@ function sysCall_init()
     }
 
     local importExportDir = sim.getStringParam(sim.stringparam_importexportdir)
-    local fileName = simUI.fileDialog(
+    local fileNames = simUI.fileDialog(
                          simUI.filedialog_type.load, "Import URDF...", importExportDir, "",
                          "URDF file", "urdf", true
                      )
 
-    if fileName and #fileName == 1 and #fileName[1] > 0 then
-        sim.setStringParam(sim.stringparam_importexportdir, fileName[1])
+    if #fileNames > 0 then
         done = false
-        options.fileName = fileName[1]
-        local xml = '<ui modal="true" layout="vbox" title="Importing ' .. fileName[1] ..
+        options.fileName = fileNames[1]
+        sim.setStringParam(sim.stringparam_importexportdir, options.fileName)
+        local xml = '<ui modal="true" layout="vbox" title="Importing ' .. options.fileName ..
                         '..." closeable="true" on-close="closeDialog">\n'
         for i = 1, #optionsInfo, 1 do
             local o = optionsInfo[i]
