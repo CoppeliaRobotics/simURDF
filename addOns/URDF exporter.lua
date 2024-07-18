@@ -13,7 +13,7 @@ function sysCall_init()
     local model = nil
     if #s == 1 then
         if sim.getModelProperty(s[1]) & sim.modelproperty_not_model == 0 and sim.getObjectType(s[1]) ==
-            sim.object_shape_type then model = s[1] end
+            sim.sceneobject_shape then model = s[1] end
     end
     if model then
         local importExportDir = sim.getStringParam(sim.stringparam_importexportdir)

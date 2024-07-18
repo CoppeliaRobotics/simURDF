@@ -22,9 +22,9 @@ function simURDF.export(origModel, fileName, options)
     sim.setModelProperty(model, sim.getModelProperty(origModel))
     if (options & 1) ~= 0 then _S.urdf.replaceDummies(model) end
     if (options & 4) == 0 then
-        local l = sim.getObjectsInTree(model, sim.object_joint_type)
+        local l = sim.getObjectsInTree(model, sim.sceneobject_joint)
         for i = 1, #l, 1 do
-            if sim.getJointType(l[i]) ~= sim.joint_spherical_subtype then
+            if sim.getJointType(l[i]) ~= sim.joint_spherical then
                 sim.setJointPosition(l[i], 0)
             end
         end
@@ -77,7 +77,7 @@ function _S.urdf.toXML(node, level)
 end
 
 function _S.urdf.appendVisibleChildShapes(array, object)
-    local shapes = sim.getObjectsInTree(object, sim.object_shape_type, 1 | 2)
+    local shapes = sim.getObjectsInTree(object, sim.sceneobject_shape, 1 | 2)
     for i = 1, #shapes, 1 do
         if sim.getObjectInt32Param(shapes[i], sim.objintparam_visible) ~= 0 then
             array[#array + 1] = shapes[i]
@@ -106,7 +106,7 @@ function _S.urdf.getFirstJoints(object, dynamicStage)
                 dynStage = 2 -- rest of the chain cannot be dynamic anymore
             end
             local objType = sim.getObjectType(obj)
-            if objType == sim.object_shape_type then
+            if objType == sim.sceneobject_shape then
                 if sim.getObjectInt32Param(obj, sim.shapeintparam_static) == 0 then
                     if dynStage == 0 then dynStage = 1 end
                 else
@@ -121,7 +121,7 @@ function _S.urdf.getFirstJoints(object, dynamicStage)
                     objs[#objs + 1] = {object = child, dynamicStage = dynStage}
                     ind = ind + 1
                 end
-            elseif (objType == sim.object_joint_type) then
+            elseif (objType == sim.sceneobject_joint) then
                 if sim.getJointMode(obj) == sim.jointmode_dynamic then
                     if dynStage == 0 then dynStage = 1 end
                 else
@@ -130,7 +130,7 @@ function _S.urdf.getFirstJoints(object, dynamicStage)
                     end
                 end
                 retVal[#retVal + 1] = {joint = obj, dynamicStage = dynStage}
-            elseif (objType == sim.object_forcesensor_type) then
+            elseif (objType == sim.sceneobject_forcesensor) then
                 retVal[#retVal + 1] = {joint = obj, dynamicStage = dynStage}
             end
         end
@@ -331,12 +331,12 @@ end
 
 function _S.urdf.getJointType(jointHandle)
     local retVal = 'fixed'
-    if sim.getObjectType(jointHandle) == sim.object_joint_type then
+    if sim.getObjectType(jointHandle) == sim.sceneobject_joint then
         local jointType = sim.getJointType(jointHandle)
         local cyclic, interval = sim.getJointInterval(jointHandle)
-        if jointType == sim.joint_revolute_subtype then
+        if jointType == sim.joint_revolute then
             retVal = cyclic and 'continuous' or 'revolute'
-        elseif jointType == sim.joint_prismatic_subtype then
+        elseif jointType == sim.joint_prismatic then
             retVal = 'prismatic'
         end
     end
@@ -344,7 +344,7 @@ function _S.urdf.getJointType(jointHandle)
 end
 
 function _S.urdf.getJointLimitNode(jointHandle)
-    if sim.getObjectType(jointHandle) == sim.object_joint_type then
+    if sim.getObjectType(jointHandle) == sim.sceneobject_joint then
         local cyclic, interval = sim.getJointInterval(jointHandle)
         if not cyclic then
             local p = sim.getJointPosition(jointHandle)
@@ -386,7 +386,7 @@ end
 
 function _S.urdf.replaceDummies(object)
     local ot = sim.getObjectType(object)
-    if ot == sim.object_dummy_type and
+    if ot == sim.sceneobject_dummy and
         (sim.getObjectInt32Param(object, sim.objintparam_visible) ~= 0) then
         local dummyShape = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {0.01, 0.01, 0.01})
         sim.setObjectAlias(dummyShape, sim.getObjectAlias(object))
@@ -405,9 +405,9 @@ function _S.urdf.insertAuxShapes(object)
     local l = sim.getObjectsInTree(object, sim.handle_all, 1 | 2)
     for i = 1, #l, 1 do
         local ot = sim.getObjectType(object)
-        if ot == sim.object_joint_type or ot == sim.object_forcesensor_type then
+        if ot == sim.sceneobject_joint or ot == sim.sceneobject_forcesensor then
             local ct = sim.getObjectType(l[i])
-            if ct == sim.object_joint_type or ct == sim.object_forcesensor_type then
+            if ct == sim.sceneobject_joint or ct == sim.sceneobject_forcesensor then
                 local auxShape = sim.createPrimitiveShape(
                                      sim.primitiveshape_spheroid, {0.05, 0.05, 0.05}
                                  )
@@ -434,7 +434,7 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
                 dynamicStage = 2 -- rest of the chain cannot be dynamic anymore
             end
         end
-        if objectType == sim.object_shape_type then
+        if objectType == sim.sceneobject_shape then
             local linkNode = _S.urdf.newNode {'link', name = _S.urdf.getObjectName(object, info)}
             local hidden =
                 ((sim.getObjectInt32Param(object, sim.objintparam_visibility_layer) & 255) == 0)
@@ -470,7 +470,7 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
                            firstJoints[i].dynamicStage, info
                        )
             end
-        elseif objectType == sim.object_joint_type or objectType == sim.object_forcesensor_type then
+        elseif objectType == sim.sceneobject_joint or objectType == sim.sceneobject_forcesensor then
             local child = sim.getObjectChild(object, 0)
             if child ~= -1 then
                 local mprop = sim.getModelProperty(child)
@@ -478,14 +478,14 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
                     child = -1
                 else
                     local childT = sim.getObjectType(child)
-                    if childT ~= sim.object_shape_type then
+                    if childT ~= sim.sceneobject_shape then
                         child = -1 -- we only take into account joints that have at least one shape in-between
                     end
                 end
             end
             if parent ~= -1 and child ~= -1 then
                 table.insert(tree, _S.urdf.getJointNode(object, parent, child, prevJoint, info))
-                if objectType == sim.object_joint_type and sim.getJointMode(object) ~=
+                if objectType == sim.sceneobject_joint and sim.getJointMode(object) ~=
                     sim.jointmode_dynamic and dynamicStage == 1 then dynamicStage = 2 end
                 prevJoint = object
                 tree = _S.urdf.parseAndCreateMeshFiles(

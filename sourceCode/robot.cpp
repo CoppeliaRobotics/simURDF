@@ -594,13 +594,13 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
         if (vJoints.at(i)->jointType==-1)
             vJoints.at(i)->nJoint = simCreateDummy(0.02,nullptr); // when joint type was not recognized
         if (vJoints.at(i)->jointType==0)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==1)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_prismatic_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_prismatic,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==2)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_spherical_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_spherical,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==3)
-            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute_subtype,sim_jointmode_force,2,nullptr,nullptr,nullptr);
+            vJoints.at(i)->nJoint = simCreateJoint(sim_joint_revolute,sim_jointmode_force,2,nullptr,nullptr,nullptr);
         if (vJoints.at(i)->jointType==4)
         { // when joint type is "fixed"
             int intParams[5]={1,4,4,0,0};
@@ -815,7 +815,7 @@ void robot::createSensors()
             { // Proximity sensors seem to be very very specific and not general / generic at all. How come?! I.e. a succession of ray description (with min/max distances) would do
                 int intParams[8]={16,16,1,4,16,1,0,0};
                 double floatParams[15]={0.0,0.48,0.1,0.1,0.1,0.1,0.0,0.02,0.02,30.0*piValue/180.0,piValue/2.0,0.0,0.02,0.0,0.0};
-                proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone_subtype,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
+                proxSensHandle=simCreateProximitySensor(sim_proximitysensor_cone,sim_objectspecialproperty_detectable_all,0,intParams,floatParams,nullptr);
                 //Set the name:
                 setSimObjectName(proxSensHandle,std::string(Sensor->name+"_proximity").c_str());
             }
@@ -892,7 +892,7 @@ int robot::getLinkPosition(std::string linkName)
 
 void robot::setLocalRespondableMaskCummulative_alternate(int objHandle,bool bitSet)
 {
-    if (simGetObjectType(objHandle)==sim_object_shape_type)
+    if (simGetObjectType(objHandle)==sim_sceneobject_shape)
     {
         int p;
         simGetObjectInt32Param(objHandle,sim_shapeintparam_respondable,&p);
