@@ -84,7 +84,7 @@ void robot::initRobotFromDoc(int options,const char* packageReplaceStr)
         }
     }
 
-    std::vector<int> parentlessObjects;
+    parentlessObjects.clear();
     for (size_t i=0;i<allObjects.size();i++)
     {
         if (simGetObjectParent(allObjects[i])==-1)

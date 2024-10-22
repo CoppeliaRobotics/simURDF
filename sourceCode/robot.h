@@ -25,6 +25,7 @@ public:
 
     std::string packagePath;
     std::string name;
+    std::vector<int> parentlessObjects;
     
     //Functions
     robot(std::string filenameOrUrdf,int options,const char* packageReplaceStr);
