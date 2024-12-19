@@ -83,11 +83,14 @@ function importURDF()
     if not options.positionCtrl then opts = opts + 256 end
     if options.shapeAtJointloc then opts = opts + 1024 end
     closeDialog()
-    pcall(
+    local res, err = pcall(
         function()
             simURDF.import(fn, opts, packageStr)
         end
     )
+    if not res then
+        sim.addLog(sim.verbosity_errors, err)
+    end
 end
 
 function closeDialog()
