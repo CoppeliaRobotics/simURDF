@@ -34,10 +34,10 @@ public:
     void openString(std::string urdf); //opens a URDF from string
     void openFile(std::string filenameAndPath); //opens the filenamAndPath which is given by a file dialog and sets packagePath
 
-    void initRobotFromDoc(int options,const char* packageReplaceStr);
+    void initRobotFromDoc(int options,const char* packageReplaceStr,const char* urdfFile);
     
     void readJoints();
-    void readLinks(const char* packageReplaceStr);
+    void readLinks(const char* packageReplaceStr, const char* urdfFile);
     void readSensors();
 
     void createJoints(bool hideJoints,bool positionCtrl);

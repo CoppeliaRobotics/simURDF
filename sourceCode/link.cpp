@@ -1,6 +1,45 @@
 #include "link.h"
 #include "rospackagehelper.h"
-    
+#include <filesystem>
+
+bool isUriPath(const std::string& path)
+{
+    const std::string filePrefix = "file://";
+    if (path.size() >= filePrefix.size() && std::equal(filePrefix.begin(), filePrefix.end(), path.begin(), [](char a, char b) { return tolower(a) == tolower(b); }))
+        return true;
+    return false;
+}
+
+std::string getAbsPath(const char* urdfFile, const char* assetFile)
+{
+    std::string assetF(assetFile);
+    if (strlen(urdfFile) > 0)
+    {
+        bool isAssetUri = isUriPath(assetF);
+        if (std::filesystem::path(assetF).is_absolute() || isAssetUri)
+        {
+            if (isAssetUri)
+            {
+                size_t prefix_end = assetF.find("://") + 3;
+                std::string prefix = assetF.substr(0, prefix_end);
+                std::string path_part = assetF.substr(prefix_end);
+                std::filesystem::path norm_path = std::filesystem::path(path_part).lexically_normal();
+                assetF = prefix + norm_path.string();
+            }
+        }
+        else
+        {
+            std::filesystem::path basePath = std::filesystem::path(urdfFile);
+            std::filesystem::path targetPath(assetF);
+            std::filesystem::path baseDirectory = basePath.parent_path();
+            std::filesystem::path absolutePath = baseDirectory / targetPath;
+            absolutePath = absolutePath.lexically_normal();
+            assetF = absolutePath.string();
+        }
+    }
+    return assetF;
+}
+
 urdfVisualOrCollision::urdfVisualOrCollision()
 {
         //Variables Visual              
@@ -179,10 +218,12 @@ void urdfLink::verifyInertia()
     }
 }
 
-void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr)
+void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr,const char* urdfFile)
 {
     if (strlen(packageReplaceStr)>0)
         meshFilename.replace(meshFilename.find("package://"),strlen("package://"),packageReplaceStr);
+    if (strlen(urdfFile)>0)
+        meshFilename = getAbsPath(urdfFile, meshFilename.c_str());
     std::string meshFilename_alt; // we use an alternative filename... the package location is somewhat strangely defined sometimes!!
 #ifndef WIN_SIM
     if (meshFilename.compare(0,10,"package://")==0) // condition added by Marc on 17/1/2014
@@ -260,7 +301,7 @@ void urdfLink::createLink(int options)
     bool shapeAtJointLoc=(options&1024)!=0;
 
     std::string txt("creating link '"+name+"'...");
-    printToConsole(sim_verbosity_scriptinfos,txt.c_str());
+    printToConsole(sim_verbosity_scripterrors,txt.c_str());
 
     // Visuals
     std::vector<urdfVisualOrCollision>::iterator it;
@@ -281,12 +322,14 @@ void urdfLink::createLink(int options)
             }
 
             if (!exists)
+            {
                 if (!useAlt)
                     printToConsole(sim_verbosity_scripterrors,("mesh file '"+visual.meshFilename+"' does not exist.").c_str());
                 else
                     printToConsole(sim_verbosity_scripterrors,("neither mesh file '"+visual.meshFilename+"' nor '"+visual.meshFilename_alt+"' do exist.").c_str());
+            }
             else {
-                printToConsole(sim_verbosity_scriptinfos,("importing "+fname).c_str());
+                printToConsole(sim_verbosity_scripterrors,("importing "+fname).c_str());
                 try {
                     visual.n = simImportShape(visual.meshExtension,fname.c_str(),16+128,0.0001,1.0);
                 } catch (std::exception& e) {

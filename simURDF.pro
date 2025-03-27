@@ -14,10 +14,12 @@ INCLUDEPATH += "sourceCode"
 INCLUDEPATH += "external"
 
 *-msvc* {
+    QMAKE_CXXFLAGS += /std:c++17
     QMAKE_CXXFLAGS += -O2
     QMAKE_CXXFLAGS += -W3
 }
 *-g++* {
+    CONFIG += c++17
     QMAKE_CXXFLAGS += -O3
     QMAKE_CXXFLAGS += -Wall
     QMAKE_CXXFLAGS += -fvisibility=hidden
@@ -36,6 +38,12 @@ INCLUDEPATH += "external"
     QMAKE_CFLAGS += -Wno-unused-parameter
     QMAKE_CFLAGS += -Wno-unused-but-set-variable
     QMAKE_CFLAGS += -Wno-unused-local-typedefs
+}
+
+*-clang* {
+    CONFIG += c++17
+    QMAKE_CXXFLAGS += -Wno-narrowing
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.13
 }
 
 INCLUDEPATH += $$BOOST_INCLUDEPATH

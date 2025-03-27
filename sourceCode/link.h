@@ -84,7 +84,7 @@ public:
     void setCylinder(std::string gazebo_radius,std::string gazebo_length,std::string choose);
     void setMass(std::string gazebo_mass);
     void setInertia(int position, std::string gazebo_inertia_number);
-    void setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr);
+    void setMeshFilename(std::string packagePath,std::string meshFilename,std::string choose,const char* packageReplaceStr,const char* urdfFile);
     void setColor(std::string color);
     void verifyInertia();
     int scaleShapeIfRequired(int shapeHandle,double scalingFactors[3]);

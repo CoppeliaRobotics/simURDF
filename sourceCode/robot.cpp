@@ -5,16 +5,19 @@
 
 robot::robot(std::string filenameOrUrdf,int options,const char* packageReplaceStr)
 {
-    if (filenameOrUrdf.compare(0, 5, "<?xml") == 0) {
+    std::string urdfFile;
+    if (filenameOrUrdf.compare(0, 5, "<?xml") == 0)
         openString(filenameOrUrdf);
-    } else {
+    else
+    {
+        urdfFile = filenameOrUrdf;
         openFile(filenameOrUrdf);
     }
 
-    this->initRobotFromDoc(options,packageReplaceStr);
+    this->initRobotFromDoc(options,packageReplaceStr,urdfFile.c_str());
 }
 
-void robot::initRobotFromDoc(int options,const char* packageReplaceStr)
+void robot::initRobotFromDoc(int options,const char* packageReplaceStr,const char* urdfFile)
 {
     bool hideJoints=(options&2)==0;
     bool centerAboveGround=(options&32)==0;
@@ -32,7 +35,7 @@ void robot::initRobotFromDoc(int options,const char* packageReplaceStr)
     name=robotElement->Attribute("name");
 
     readJoints();
-    readLinks(packageReplaceStr);
+    readLinks(packageReplaceStr,urdfFile);
     readSensors();
 
     std::string txt("there are "+boost::lexical_cast<std::string>(vJoints.size())+" joints.");
@@ -300,7 +303,7 @@ void robot::readJoints()
     }
 }
 
-void robot::readLinks(const char* packageReplaceStr)
+void robot::readLinks(const char* packageReplaceStr, const char* urdfFile)
 {
     simExtUrdf::tinyxml2::XMLElement* linkElement =  robotElement->FirstChildElement("link");
     while (linkElement)
@@ -365,7 +368,7 @@ void robot::readLinks(const char* packageReplaceStr)
                 if(visual_geometry_meshElement!=nullptr)
                 {
                     if (visual_geometry_meshElement->Attribute("filename") != nullptr)
-                        Link->setMeshFilename(packagePath,visual_geometry_meshElement->Attribute("filename"),"visual",packageReplaceStr);
+                        Link->setMeshFilename(packagePath,visual_geometry_meshElement->Attribute("filename"),"visual",packageReplaceStr,urdfFile);
                     if (visual_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentVisual().mesh_scaling,visual_geometry_meshElement->Attribute("scale"));
                 }
@@ -422,7 +425,7 @@ void robot::readLinks(const char* packageReplaceStr)
                 if(collision_geometry_meshElement!=nullptr)
                 {
                     if (collision_geometry_meshElement->Attribute("filename") != nullptr)
-                        Link->setMeshFilename(packagePath,collision_geometry_meshElement->Attribute("filename"),"collision",packageReplaceStr);
+                        Link->setMeshFilename(packagePath,collision_geometry_meshElement->Attribute("filename"),"collision",packageReplaceStr,urdfFile);
                     if (collision_geometry_meshElement->Attribute("scale") != nullptr)
                         stringToArray(Link->currentCollision().mesh_scaling,collision_geometry_meshElement->Attribute("scale"));
                 }
