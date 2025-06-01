@@ -13,7 +13,7 @@ bool isUriPath(const std::string& path)
 std::string getAbsPath(const char* urdfFile, const char* assetFile)
 {
     std::string assetF(assetFile);
-    if (strlen(urdfFile) > 0)
+    if ((strlen(urdfFile) > 0) && (assetF.find("package://") == std::string::npos))
     {
         bool isAssetUri = isUriPath(assetF);
         if (std::filesystem::path(assetF).is_absolute() || isAssetUri)
@@ -222,8 +222,7 @@ void urdfLink::setMeshFilename(std::string packagePath,std::string meshFilename,
 {
     if (strlen(packageReplaceStr)>0)
         meshFilename.replace(meshFilename.find("package://"),strlen("package://"),packageReplaceStr);
-    if (strlen(urdfFile)>0)
-        meshFilename = getAbsPath(urdfFile, meshFilename.c_str());
+    meshFilename = getAbsPath(urdfFile, meshFilename.c_str());
     std::string meshFilename_alt; // we use an alternative filename... the package location is somewhat strangely defined sometimes!!
 #ifndef WIN_SIM
     if (meshFilename.compare(0,10,"package://")==0) // condition added by Marc on 17/1/2014
