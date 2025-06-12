@@ -1,10 +1,11 @@
-sim = require 'sim'
+local sim, simUI, simURDF
 
 function sysCall_info()
     return {autoStart = false, menu = 'Exporters\nURDF exporter...'}
 end
 
 function sysCall_init()
+    sim = require 'sim'
     simUI = require 'simUI'
     simURDF = require 'simURDF'
 

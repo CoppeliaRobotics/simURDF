@@ -1,7 +1,7 @@
-sim = require('sim')
-simAssimp = require('simAssimp')
+local sim = require 'sim'
+local simAssimp = require 'simAssimp'
 
-local simURDF = loadPlugin('simURDF')
+local simURDF = loadPlugin 'simURDF'
 
 simURDF.importFile = simURDF.import
 
@@ -498,6 +498,7 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
 end
 
 function simURDF.sendTF(modelHandle, fileName)
+    local simROS2
     pcall(
         function()
             simROS2 = require 'simROS2'

@@ -1,11 +1,13 @@
+local sim, simUI, simURDF
+
 function sysCall_info()
     return {autoStart = false, menu = 'Importers\nURDF importer...'}
 end
 
 function sysCall_init()
-    sim = require('sim')
-    simUI = require('simUI')
-    simURDF = require('simURDF')
+    sim = require 'sim'
+    simUI = require 'simUI'
+    simURDF = require 'simURDF'
 
     closeDialog()
 
