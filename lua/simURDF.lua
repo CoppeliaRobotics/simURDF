@@ -1,7 +1,8 @@
-local sim = require 'sim'
-local simAssimp = require 'simAssimp'
-
 local simURDF = loadPlugin 'simURDF'
+local sim = require 'sim-2'
+local simAssimp = require 'simAssimp'
+local __ = {}
+__.urdf = {}
 
 simURDF.importFile = simURDF.import
 
@@ -19,8 +20,9 @@ function simURDF.export(origModel, fileName, options)
     end
 
     local model = sim.copyPasteObjects({origModel}, 1 + 2 + 4 + 8 + 16 + 32)[1] -- work with a copy
-    sim.setModelProperty(model, sim.getModelProperty(origModel))
-    if (options & 1) ~= 0 then _S.urdf.replaceDummies(model) end
+    sim.setBoolProperty(model, 'modelBase', sim.getBoolProperty(origModel, 'modelBase'))
+    sim.setIntProperty(model, 'model.propertyFlags', sim.getIntProperty(origModel, 'model.propertyFlags'))
+    if (options & 1) ~= 0 then __.urdf.replaceDummies(model) end
     if (options & 4) == 0 then
         local l = sim.getObjectsInTree(model, sim.sceneobject_joint)
         for i = 1, #l, 1 do
@@ -29,29 +31,27 @@ function simURDF.export(origModel, fileName, options)
             end
         end
     end
-    _S.urdf.insertAuxShapes(model)
+    __.urdf.insertAuxShapes(model)
     local info = {baseFile = baseName, base = model, options = options}
-    local tree = _S.urdf.newNode({'robot', name = sim.getObjectAlias(model)})
+    local tree = __.urdf.newNode({'robot', name = sim.getObjectAlias(model)})
     local dynamicStage = 0
-    local mprop = sim.getModelProperty(model)
-    if (mprop & sim.modelproperty_not_dynamic) ~= 0 then dynamicStage = 2 end
-    local tree = _S.urdf.parseAndCreateMeshFiles(tree, model, -1, -1, dynamicStage, info)
+    if sim.getBoolProperty(model, 'model.notDynamic') then dynamicStage = 2 end
+    local tree = __.urdf.parseAndCreateMeshFiles(tree, model, -1, -1, dynamicStage, info)
     sim.removeModel(model)
-    local xml = _S.urdf.toXML(tree)
+    local xml = __.urdf.toXML(tree)
     local f = io.open(fileName, 'w+')
     f:write(xml)
     f:close()
 end
 
-_S.urdf = {}
-function _S.urdf.newNode(t)
+function __.urdf.newNode(t)
     assert(type(t) == 'table', 'bad type')
     local name = table.remove(t, 1)
     t[0] = name
     return t
 end
 
-function _S.urdf.toXML(node, level)
+function __.urdf.toXML(node, level)
     level = level or 0
     local indent = '';
     for i = 1, level do indent = indent .. '    ' end
@@ -68,7 +68,7 @@ function _S.urdf.toXML(node, level)
     end
     if #node > 0 then
         xml = xml .. '>\n'
-        for i, child in ipairs(node) do xml = xml .. _S.urdf.toXML(child, level + 1) end
+        for i, child in ipairs(node) do xml = xml .. __.urdf.toXML(child, level + 1) end
         xml = xml .. indent .. '</' .. node[0] .. '>\n'
     else
         xml = xml .. ' />\n'
@@ -76,17 +76,17 @@ function _S.urdf.toXML(node, level)
     return xml
 end
 
-function _S.urdf.appendVisibleChildShapes(array, object)
+function __.urdf.appendVisibleChildShapes(array, object)
     local shapes = sim.getObjectsInTree(object, sim.sceneobject_shape, 1 | 2)
     for i = 1, #shapes, 1 do
-        if sim.getObjectInt32Param(shapes[i], sim.objintparam_visible) ~= 0 then
+        if sim.getBoolProperty(shapes[i], 'visible') then
             array[#array + 1] = shapes[i]
         end
-        _S.urdf.appendVisibleChildShapes(array, shapes[i])
+        __.urdf.appendVisibleChildShapes(array, shapes[i])
     end
 end
 
-function _S.urdf.getFirstJoints(object, dynamicStage)
+function __.urdf.getFirstJoints(object, dynamicStage)
     local retVal = {}
     local objs = {}
     local ind = 0
@@ -99,15 +99,14 @@ function _S.urdf.getFirstJoints(object, dynamicStage)
     for i = 1, #objs, 1 do
         local obj = objs[i].object
         local dynStage = objs[i].dynamicStage
-        local mprop = sim.getModelProperty(obj)
-        if (mprop & sim.modelproperty_not_model) ~= 0 then mprop = 0 end
-        if (mprop & sim.modelproperty_not_visible) == 0 then
-            if (mprop & sim.modelproperty_not_dynamic) ~= 0 then
+        
+        if not sim.getBoolProperty(obj, 'notVisible') then
+            if sim.getBoolProperty(obj, 'notDynamic') then
                 dynStage = 2 -- rest of the chain cannot be dynamic anymore
             end
             local objType = sim.getObjectType(obj)
             if objType == sim.sceneobject_shape then
-                if sim.getObjectInt32Param(obj, sim.shapeintparam_static) == 0 then
+                if sim.getBoolProperty(obj, 'dynamic') then
                     if dynStage == 0 then dynStage = 1 end
                 else
                     if dynStage == 1 then
@@ -138,7 +137,7 @@ function _S.urdf.getFirstJoints(object, dynamicStage)
     return retVal
 end
 
-function _S.urdf.matrixToRPY(m)
+function __.urdf.matrixToRPY(m)
     -- Convert a 3x3 rotation matrix to roll-pitch-yaw coordinates.
     -- URDF's rpy are the Z1-Y2-X3 Tait-Bryan angles.
     -- See https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
@@ -166,7 +165,7 @@ function _S.urdf.matrixToRPY(m)
     return {r, p, y}
 end
 
-function _S.urdf.matrixToXYZRPY(m)
+function __.urdf.matrixToXYZRPY(m)
     if getmetatable(m) ~= Matrix then
         assert(type(m) == 'table', 'table expected')
         assert(#m == 12 or #m == 16, 'not a 4x4 matrix (12 or 16 values expected)')
@@ -175,13 +174,13 @@ function _S.urdf.matrixToXYZRPY(m)
     assert(m:sameshape{3, 4} or m:sameshape{4, 4}, 'not a 4x4 matrix')
     local R, t = m:slice(1, 1, 3, 3), m:slice(1, 4, 3, 4)
     local xyz = {t[1], t[2], t[3]}
-    local rpy = _S.urdf.matrixToRPY(R)
+    local rpy = __.urdf.matrixToRPY(R)
     return xyz, rpy
 end
 
-function _S.urdf.getShapeOriginNode(shape, parent)
-    local originNode = _S.urdf.newNode {'origin'}
-    local xyz, rpy = _S.urdf.matrixToXYZRPY(
+function __.urdf.getShapeOriginNode(shape, parent)
+    local originNode = __.urdf.newNode {'origin'}
+    local xyz, rpy = __.urdf.matrixToXYZRPY(
                          sim.getObjectMatrix(
                              shape | sim.handleflag_reljointbaseframe, parent
                          )
@@ -191,21 +190,21 @@ function _S.urdf.getShapeOriginNode(shape, parent)
     return originNode
 end
 
-function _S.urdf.getLinkInertialNode(shape, parent)
-    local inertialNode = _S.urdf.newNode {'inertial'}
+function __.urdf.getLinkInertialNode(shape, parent)
+    local inertialNode = __.urdf.newNode {'inertial'}
     local mi, mt = sim.getShapeInertia(shape)
     local m = sim.getObjectMatrix(shape | sim.handleflag_reljointbaseframe, parent)
     mt = sim.multiplyMatrices(m, mt)
-    local xyz, rpy = _S.urdf.matrixToXYZRPY(mt)
+    local xyz, rpy = __.urdf.matrixToXYZRPY(mt)
     table.insert(
-        inertialNode, _S.urdf.newNode {
+        inertialNode, __.urdf.newNode {
             'origin',
             xyz = string.format('%f %f %f', unpack(xyz)),
             rpy = string.format('%f %f %f', unpack(rpy)),
         }
     )
     table.insert(
-        inertialNode, _S.urdf.newNode {
+        inertialNode, __.urdf.newNode {
             'inertia',
             ixx = mi[1],
             ixy = (mi[2] + mi[4]) / 2,
@@ -215,11 +214,11 @@ function _S.urdf.getLinkInertialNode(shape, parent)
             izz = mi[9],
         }
     )
-    table.insert(inertialNode, _S.urdf.newNode {'mass', value = sim.getShapeMass(shape)})
+    table.insert(inertialNode, __.urdf.newNode {'mass', value = sim.getFloatProperty(shape, 'mass')})
     return inertialNode
 end
 
-function _S.urdf.getCollisionOrVisualNodes(shape, prevJoint, info, isCollisionNode)
+function __.urdf.getCollisionOrVisualNodes(shape, prevJoint, info, isCollisionNode)
     local retVal = {}
     local originalFramePose = sim.getObjectPose(shape)
     local shapes = sim.copyPasteObjects({shape}, 2 + 4 + 8 + 16 + 32)
@@ -242,22 +241,22 @@ function _S.urdf.getCollisionOrVisualNodes(shape, prevJoint, info, isCollisionNo
         end
         local node, nm
         if isCollisionNode then
-            node = _S.urdf.newNode {'collision'}
-            nm = _S.urdf.getObjectName(shape, info) .. '_coll_' .. i
+            node = __.urdf.newNode {'collision'}
+            nm = __.urdf.getObjectName(shape, info) .. '_coll_' .. i
         else
-            node = _S.urdf.newNode {'visual'}
-            nm = _S.urdf.getObjectName(shape, info) .. '_vis_' .. i
+            node = __.urdf.newNode {'visual'}
+            nm = __.urdf.getObjectName(shape, info) .. '_vis_' .. i
         end
-        table.insert(node, _S.urdf.getShapeOriginNode(aShape, prevJoint))
-        table.insert(node, _S.urdf.getShapeGeometryNode(aShape, nm, info))
+        table.insert(node, __.urdf.getShapeOriginNode(aShape, prevJoint))
+        table.insert(node, __.urdf.getShapeGeometryNode(aShape, nm, info))
 
         if not isCollisionNode then
-            local materialNode = _S.urdf.newNode {
+            local materialNode = __.urdf.newNode {
                 'material',
-                name = _S.urdf.getObjectName(shape, info) .. '_material',
+                name = __.urdf.getObjectName(shape, info) .. '_material',
             }
             local r, col = sim.getShapeColor(aShape, nil, sim.colorcomponent_ambient_diffuse)
-            local colorNode = _S.urdf.newNode {
+            local colorNode = __.urdf.newNode {
                 'color',
                 rgba = string.format('%f %f %f 1.0', unpack(col)),
             }
@@ -272,7 +271,7 @@ function _S.urdf.getCollisionOrVisualNodes(shape, prevJoint, info, isCollisionNo
     return retVal
 end
 
-function _S.urdf.getObjectName(objectHandle, info)
+function __.urdf.getObjectName(objectHandle, info)
     local nm = 'robot_base'
     if objectHandle ~= info.base then
         nm = sim.getObjectAlias(objectHandle)
@@ -299,37 +298,37 @@ function _S.urdf.getObjectName(objectHandle, info)
     --]]
 end
 
-function _S.urdf.getShapeGeometryNode(shape, name, info)
-    local geometryNode = _S.urdf.newNode {'geometry'}
+function __.urdf.getShapeGeometryNode(shape, name, info)
+    local geometryNode = __.urdf.newNode {'geometry'}
     local r, pureType, dims = sim.getShapeGeomInfo(shape)
     local pure = (r & 2) > 0
     local x, y, z = dims[1], dims[2], dims[3]
     if pure and pureType == sim.primitiveshape_cuboid then
-        local boxNode = _S.urdf.newNode {'box', size = string.format('%f %f %f', x, y, z)}
+        local boxNode = __.urdf.newNode {'box', size = string.format('%f %f %f', x, y, z)}
         table.insert(geometryNode, boxNode)
     elseif pure and pureType == sim.primitiveshape_spheroid then
         assert(
             math.abs(x - y) < 1e-3 and math.abs(y - z) < 1e-3,
             'incosistent X/Y/Z dimension in sphere'
         )
-        local sphereNode = _S.urdf.newNode {'sphere', radius = x / 2}
+        local sphereNode = __.urdf.newNode {'sphere', radius = x / 2}
         table.insert(geometryNode, sphereNode)
     elseif pure and pureType == sim.primitiveshape_cylinder then
         assert(math.abs(x - y) < 1e-3, 'incosistent X/Y dimension in cylinder')
-        local cylinderNode = _S.urdf.newNode {'cylinder', radius = x / 2, length = z}
+        local cylinderNode = __.urdf.newNode {'cylinder', radius = x / 2, length = z}
         table.insert(geometryNode, cylinderNode)
     else
         --        local fn=string.format('%s_%s.dae',info.baseFile,name)
         --        simAssimp.exportShapes({shape},fn,'collada',1.0,simAssimp.upVector.z,4+512)
         local fn = string.format('%s_%s.dae', info.baseFile, name)
         simAssimp.exportShapes({shape}, fn, 'collada', 1.0, simAssimp.upVector.z, 4 + 512)
-        local meshNode = _S.urdf.newNode {'mesh', filename = 'file://' .. fn}
+        local meshNode = __.urdf.newNode {'mesh', filename = 'file://' .. fn}
         table.insert(geometryNode, meshNode)
     end
     return geometryNode
 end
 
-function _S.urdf.getJointType(jointHandle)
+function __.urdf.getJointType(jointHandle)
     local retVal = 'fixed'
     if sim.getObjectType(jointHandle) == sim.sceneobject_joint then
         local jointType = sim.getJointType(jointHandle)
@@ -343,51 +342,50 @@ function _S.urdf.getJointType(jointHandle)
     return retVal
 end
 
-function _S.urdf.getJointLimitNode(jointHandle)
+function __.urdf.getJointLimitNode(jointHandle)
     if sim.getObjectType(jointHandle) == sim.sceneobject_joint then
         local cyclic, interval = sim.getJointInterval(jointHandle)
         if not cyclic then
             local p = sim.getJointPosition(jointHandle)
-            local limitNode = _S.urdf.newNode {'limit'}
+            local limitNode = __.urdf.newNode {'limit'}
             limitNode.lower = interval[1] - p
             limitNode.upper = interval[1] - p + interval[2]
             limitNode.effort = sim.getJointTargetForce(jointHandle)
-            limitNode.velocity = sim.getObjectFloatParam(jointHandle, sim.jointfloatparam_maxvel)
+            limitNode.velocity = sim.getFloatArrayProperty(jointHandle, 'maxVelAccelJerk')[1]
             return limitNode
         end
     end
 end
 
-function _S.urdf.getJointOriginNode(jointHandle, prevJoint)
-    local originNode = _S.urdf.newNode {'origin'}
+function __.urdf.getJointOriginNode(jointHandle, prevJoint)
+    local originNode = __.urdf.newNode {'origin'}
     local m = sim.getObjectMatrix(jointHandle | sim.handleflag_reljointbaseframe, prevJoint)
-    local xyz, rpy = _S.urdf.matrixToXYZRPY(m)
+    local xyz, rpy = __.urdf.matrixToXYZRPY(m)
     originNode.xyz = string.format('%f %f %f', unpack(xyz))
     originNode.rpy = string.format('%f %f %f', unpack(rpy))
     return originNode
 end
 
-function _S.urdf.getJointNode(jointHandle, parentHandle, childHandle, prevJoint, info)
-    local jointNode = _S.urdf.newNode {'joint'}
-    jointNode.name = _S.urdf.getObjectName(jointHandle, info)
-    jointNode.type = _S.urdf.getJointType(jointHandle)
-    table.insert(jointNode, _S.urdf.newNode {'axis', xyz = '0 0 1'})
-    local limitNode = _S.urdf.getJointLimitNode(jointHandle)
+function __.urdf.getJointNode(jointHandle, parentHandle, childHandle, prevJoint, info)
+    local jointNode = __.urdf.newNode {'joint'}
+    jointNode.name = __.urdf.getObjectName(jointHandle, info)
+    jointNode.type = __.urdf.getJointType(jointHandle)
+    table.insert(jointNode, __.urdf.newNode {'axis', xyz = '0 0 1'})
+    local limitNode = __.urdf.getJointLimitNode(jointHandle)
     if limitNode ~= nil then table.insert(jointNode, limitNode) end
     table.insert(
-        jointNode, _S.urdf.newNode {'parent', link = _S.urdf.getObjectName(parentHandle, info)}
+        jointNode, __.urdf.newNode {'parent', link = __.urdf.getObjectName(parentHandle, info)}
     )
     table.insert(
-        jointNode, _S.urdf.newNode {'child', link = _S.urdf.getObjectName(childHandle, info)}
+        jointNode, __.urdf.newNode {'child', link = __.urdf.getObjectName(childHandle, info)}
     )
-    table.insert(jointNode, _S.urdf.getJointOriginNode(jointHandle, prevJoint))
+    table.insert(jointNode, __.urdf.getJointOriginNode(jointHandle, prevJoint))
     return jointNode
 end
 
-function _S.urdf.replaceDummies(object)
+function __.urdf.replaceDummies(object)
     local ot = sim.getObjectType(object)
-    if ot == sim.sceneobject_dummy and
-        (sim.getObjectInt32Param(object, sim.objintparam_visible) ~= 0) then
+    if ot == sim.sceneobject_dummy and sim.getBoolProperty(object, 'visible') then
         local dummyShape = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {0.01, 0.01, 0.01})
         sim.setObjectAlias(dummyShape, sim.getObjectAlias(object))
         sim.setObjectColor(dummyShape, 0, sim.colorcomponent_ambient_diffuse, {1, 0, 0})
@@ -398,47 +396,43 @@ function _S.urdf.replaceDummies(object)
         object = dummyShape
     end
     local l = sim.getObjectsInTree(object, sim.handle_all, 1 | 2)
-    for i = 1, #l, 1 do _S.urdf.replaceDummies(l[i]) end
+    for i = 1, #l, 1 do __.urdf.replaceDummies(l[i]) end
 end
 
-function _S.urdf.insertAuxShapes(object)
+function __.urdf.insertAuxShapes(object)
     local l = sim.getObjectsInTree(object, sim.handle_all, 1 | 2)
     for i = 1, #l, 1 do
         local ot = sim.getObjectType(object)
         if ot == sim.sceneobject_joint or ot == sim.sceneobject_forcesensor then
             local ct = sim.getObjectType(l[i])
             if ct == sim.sceneobject_joint or ct == sim.sceneobject_forcesensor then
-                local auxShape = sim.createPrimitiveShape(
-                                     sim.primitiveshape_spheroid, {0.05, 0.05, 0.05}
-                                 )
+                local auxShape = sim.createPrimitiveShape(sim.primitiveshape_spheroid, {0.05, 0.05, 0.05})
                 sim.setObjectAlias(auxShape, 'auxShape')
                 sim.setObjectColor(auxShape, 0, sim.colorcomponent_ambient_diffuse, {1, 1, 1})
                 sim.setObjectParent(auxShape, object, false)
                 sim.setObjectParent(l[i], auxShape, true)
                 l[#l + 1] = auxShape
             else
-                _S.urdf.insertAuxShapes(l[i])
+                __.urdf.insertAuxShapes(l[i])
             end
         else
-            _S.urdf.insertAuxShapes(l[i])
+            __.urdf.insertAuxShapes(l[i])
         end
     end
 end
 
-function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynamicStage, info)
+function __.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynamicStage, info)
     local objectType = sim.getObjectType(object)
-    local mprop = sim.getModelProperty(object)
-    if (mprop & sim.modelproperty_not_visible) == 0 then -- ignore invisible models
-        if (mprop & sim.modelproperty_not_dynamic) ~= 0 then
+    if not sim.getBoolProperty(object, 'model.notVisible') -- ignore invisible models
+        if sim.getBoolProperty(object, 'model.notDynamic') then
             if dynamicStage == 1 then
                 dynamicStage = 2 -- rest of the chain cannot be dynamic anymore
             end
         end
         if objectType == sim.sceneobject_shape then
-            local linkNode = _S.urdf.newNode {'link', name = _S.urdf.getObjectName(object, info)}
-            local hidden =
-                ((sim.getObjectInt32Param(object, sim.objintparam_visibility_layer) & 255) == 0)
-            local dyn = (sim.getObjectInt32Param(object, sim.shapeintparam_static) == 0)
+            local linkNode = __.urdf.newNode {'link', name = __.urdf.getObjectName(object, info)}
+            local hidden = ((sim.getIntProperty(object, 'layer') & 255) == 0)
+            local dyn = sim.getBoolProperty(object, 'dynamic')
             if dyn then
                 if dynamicStage == 0 then dynamicStage = 1 end
             else
@@ -448,24 +442,24 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
             end
             local visuals = {}
             if dynamicStage == 1 then
-                table.insert(linkNode, _S.urdf.getLinkInertialNode(object, prevJoint))
+                table.insert(linkNode, __.urdf.getLinkInertialNode(object, prevJoint))
             end
             if dynamicStage == 1 or hidden then
                 -- we create 1-n 'collision' nodes from that object
-                local cn = _S.urdf.getCollisionOrVisualNodes(object, prevJoint, info, true)
+                local cn = __.urdf.getCollisionOrVisualNodes(object, prevJoint, info, true)
                 for i = 1, #cn, 1 do table.insert(linkNode, cn[i]) end
             end
             if not hidden then visuals[#visuals + 1] = object end
-            _S.urdf.appendVisibleChildShapes(visuals, object, info)
+            __.urdf.appendVisibleChildShapes(visuals, object, info)
             -- we create 1-n 'visual' nodes from those objects
             for j = 1, #visuals, 1 do
-                local cn = _S.urdf.getCollisionOrVisualNodes(visuals[j], prevJoint, info, false)
+                local cn = __.urdf.getCollisionOrVisualNodes(visuals[j], prevJoint, info, false)
                 for i = 1, #cn, 1 do table.insert(linkNode, cn[i]) end
             end
             table.insert(tree, linkNode)
-            local firstJoints = _S.urdf.getFirstJoints(object, dynamicStage)
+            local firstJoints = __.urdf.getFirstJoints(object, dynamicStage)
             for i = 1, #firstJoints, 1 do
-                tree = _S.urdf.parseAndCreateMeshFiles(
+                tree = __.urdf.parseAndCreateMeshFiles(
                            tree, firstJoints[i].joint, object, prevJoint,
                            firstJoints[i].dynamicStage, info
                        )
@@ -473,8 +467,7 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
         elseif objectType == sim.sceneobject_joint or objectType == sim.sceneobject_forcesensor then
             local child = sim.getObjectChild(object, 0)
             if child ~= -1 then
-                local mprop = sim.getModelProperty(child)
-                if (mprop & sim.modelproperty_not_visible) ~= 0 then -- ignore invisible models
+                if sim.getBoolProperty(child, 'model.notVisible') then -- ignore invisible models
                     child = -1
                 else
                     local childT = sim.getObjectType(child)
@@ -484,13 +477,11 @@ function _S.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynami
                 end
             end
             if parent ~= -1 and child ~= -1 then
-                table.insert(tree, _S.urdf.getJointNode(object, parent, child, prevJoint, info))
+                table.insert(tree, __.urdf.getJointNode(object, parent, child, prevJoint, info))
                 if objectType == sim.sceneobject_joint and sim.getJointMode(object) ~=
                     sim.jointmode_dynamic and dynamicStage == 1 then dynamicStage = 2 end
                 prevJoint = object
-                tree = _S.urdf.parseAndCreateMeshFiles(
-                           tree, child, object, prevJoint, dynamicStage, info
-                       )
+                tree = __.urdf.parseAndCreateMeshFiles(tree, child, object, prevJoint, dynamicStage, info)
             end
         end
     end
