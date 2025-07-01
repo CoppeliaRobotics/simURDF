@@ -423,7 +423,7 @@ end
 
 function __.urdf.parseAndCreateMeshFiles(tree, object, parent, prevJoint, dynamicStage, info)
     local objectType = sim.getObjectType(object)
-    if not sim.getBoolProperty(object, 'model.notVisible') -- ignore invisible models
+    if not sim.getBoolProperty(object, 'model.notVisible') then -- ignore invisible models
         if sim.getBoolProperty(object, 'model.notDynamic') then
             if dynamicStage == 1 then
                 dynamicStage = 2 -- rest of the chain cannot be dynamic anymore
