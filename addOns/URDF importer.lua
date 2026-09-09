@@ -5,7 +5,7 @@ function sysCall_info()
 end
 
 function sysCall_init()
-    sim = require 'sim'
+    sim = require 'sim-1'
     simUI = require 'simUI'
     simURDF = require 'simURDF'
 
