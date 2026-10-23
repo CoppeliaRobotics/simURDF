@@ -511,7 +511,7 @@ void urdfLink::createLink(int options)
     const float specular[3]={0.2f,0.2f,0.2f};
     int *shapes = new int[visuals.size()];
     int validShapes = 0;
-    C7Vector desiredShapeFramePose;
+    CPose desiredShapeFramePose;
     for (unsigned int i=0; i<visuals.size(); i++)
     {
         urdfVisualOrCollision &visual = visuals[i];
@@ -523,20 +523,20 @@ void urdfLink::createLink(int options)
                 simSetShapeColor(visual.n,nullptr,sim_colorcomponent_specular,specular);
             }
 
-            C7Vector frame;
+            CPose frame;
             frame.X.setData(visual.xyz);
             frame.Q=getQuaternionFromRpy(visual.rpy);
 
             if (validShapes==0)
                 desiredShapeFramePose=frame; // pick the first visual item
 
-            C7Vector initVisualFrame;
+            CPose initVisualFrame;
             simGetObjectPosition(visual.n,-1,initVisualFrame.X.data);
             C3Vector euler;
             simGetObjectOrientation(visual.n,-1,euler.data);
             initVisualFrame.Q.setEulerAngles(euler);
 
-            C7Vector x(frame*initVisualFrame);
+            CPose x(frame*initVisualFrame);
 
             simSetObjectPosition(visual.n,-1,x.X.data);
             simSetObjectOrientation(visual.n,-1,x.Q.getEulerAngles().data);
@@ -571,20 +571,20 @@ void urdfLink::createLink(int options)
     for (unsigned int i=0; i<collisions.size(); i++) {
         urdfVisualOrCollision &collision = collisions[i];
         if (collision.n!=-1) {
-            C7Vector frame;
+            CPose frame;
             frame.X.setData(collision.xyz);
             frame.Q=getQuaternionFromRpy(collision.rpy);
 
             if (validShapes==0)
                 desiredShapeFramePose=frame; // pick the first collision item
 
-            C7Vector initCollisionFrame;
+            CPose initCollisionFrame;
             simGetObjectPosition(collision.n,-1,initCollisionFrame.X.data);
             C3Vector euler;
             simGetObjectOrientation(collision.n,-1,euler.data);
             initCollisionFrame.Q.setEulerAngles(euler);
 
-            C7Vector x(frame*initCollisionFrame);
+            CPose x(frame*initCollisionFrame);
 
             simSetObjectPosition(collision.n,-1,x.X.data);
             simSetObjectOrientation(collision.n,-1,x.Q.getEulerAngles().data);
@@ -617,7 +617,7 @@ void urdfLink::createLink(int options)
     // Inertia
     if (inertiaPresent)
     {
-        C7Vector inertiaFrame;
+        CPose inertiaFrame;
         inertiaFrame.X.setData(inertial_xyz);
         inertiaFrame.Q=getQuaternionFromRpy(inertial_rpy);
 
@@ -648,17 +648,17 @@ void urdfLink::createLink(int options)
         { // if we have a collision object, we attach the visual object to it, then forget the visual object
 
             C3Vector euler;
-            C7Vector collisionFrame;
+            CPose collisionFrame;
             simGetObjectPosition(nLinkCollision,-1,collisionFrame.X.data);
             simGetObjectOrientation(nLinkCollision,-1,euler.data);
             collisionFrame.Q.setEulerAngles(euler);
 
-            C7Vector visualFrame;
+            CPose visualFrame;
             simGetObjectPosition(nLinkVisual,-1,visualFrame.X.data);
             simGetObjectOrientation(nLinkVisual,-1,euler.data);
             visualFrame.Q.setEulerAngles(euler);
 
-            C7Vector x(collisionFrame.getInverse()*visualFrame);
+            CPose x(collisionFrame.getInverse()*visualFrame);
 
             simSetObjectPosition(nLinkVisual,-1,x.X.data);
             simSetObjectOrientation(nLinkVisual,-1,x.Q.getEulerAngles().data);
@@ -691,7 +691,7 @@ int urdfLink::scaleShapeIfRequired(int shapeHandle,double scalingFactors[3])
     if (simGetShapeMesh(shapeHandle,&vertices,&verticesSize,&indices,&indicesSize,nullptr)!=-1)
     {
         // Scale the vertices:
-        C7Vector tr;
+        CPose tr;
         simGetObjectPosition(shapeHandle,-1,tr.X.data);
         C3Vector euler;
         simGetObjectOrientation(shapeHandle,-1,euler.data);

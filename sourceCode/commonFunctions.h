@@ -20,4 +20,4 @@ double* minus(double arr[]);
 std::string printMatrix(const double arr[]);
 void printToConsole(int verbosity,const char* txt);
 void setSimObjectName(int objectHandle,const char* desiredName);
-C4Vector getQuaternionFromRpy(double rpy[3]);
+CQuaternion getQuaternionFromRpy(double rpy[3]);

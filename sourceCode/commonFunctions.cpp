@@ -103,9 +103,9 @@ void setSimObjectName(int objectHandle,const char* desiredName)
 #endif
 }
 
-C4Vector getQuaternionFromRpy(double rpy[3])
+CQuaternion getQuaternionFromRpy(double rpy[3])
 {
-    C4Vector q1,q2,q3;
+    CQuaternion q1,q2,q3;
     q1.setEulerAngles(C3Vector(rpy[0],0.0,0.0));
     q2.setEulerAngles(C3Vector(0.0,rpy[1],0.0));
     q3.setEulerAngles(C3Vector(0.0,0.0,rpy[2]));

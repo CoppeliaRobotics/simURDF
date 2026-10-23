@@ -118,7 +118,7 @@ void robot::initRobotFromDoc(int options,const char* packageReplaceStr,const cha
             int indicesSize;
             if (simGetShapeMesh(allShapes[shNb],&vertices,&verticesSize,&indices,&indicesSize,nullptr)!=-1)
             {
-                C7Vector tr;
+                CPose tr;
                 simGetObjectPosition(allShapes[shNb],-1,tr.X.data);
                 C3Vector euler;
                 simGetObjectOrientation(allShapes[shNb],-1,euler.data);
@@ -583,7 +583,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
     for(size_t i = 0; i < vJoints.size() ; i++)
     {
         //Move the joints to the positions specifieds by the urdf file
-        C7Vector tmp;
+        CPose tmp;
         tmp.setIdentity();
         tmp.X.setData(vJoints.at(i)->origin_xyz);
         tmp.Q=getQuaternionFromRpy(vJoints.at(i)->origin_rpy);
@@ -693,10 +693,10 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
             rotAxis(1)=axis(0);
             rotAxis(2)=0.0;
             rotAxis.normalize();
-            C7Vector m(jointAxisMatrix);
+            CPose m(jointAxisMatrix);
             double alpha=-atan2(rotAxis(1),rotAxis(0));
             double beta=atan2(-sqrt(rotAxis(0)*rotAxis(0)+rotAxis(1)*rotAxis(1)),rotAxis(2));
-            C7Vector r;
+            CPose r;
             r.X.clear();
             r.Q.setEulerAngles(0.0,0.0,alpha);
             m=r*m;
@@ -710,7 +710,7 @@ void robot::createJoints(bool hideJoints,bool positionCtrl)
             m=r*m;
             jointAxisMatrix=m.getMatrix();
         }
-        C4Vector q((vJoints.at(i)->jointBaseFrame*jointAxisMatrix).Q);
+        CQuaternion q((vJoints.at(i)->jointBaseFrame*jointAxisMatrix).Q);
         simSetObjectOrientation(vJoints.at(i)->nJoint,-1,q.getEulerAngles().data);
     }
 }
@@ -724,8 +724,8 @@ void robot::createLinks(int options)
 
         // We attach the collision link to a joint. If the collision link isn't there, we use the visual link instead:
 
-        C7Vector linkInitialConf;
-        C7Vector linkDesiredConf;
+        CPose linkInitialConf;
+        CPose linkDesiredConf;
         int effectiveLinkHandle=-1;
         if (Link->nLinkCollision!=-1)
         {
@@ -753,7 +753,7 @@ void robot::createLinks(int options)
         simGetObjectOrientation(effectiveLinkHandle,-1,euler.data);
         linkInitialConf.Q.setEulerAngles(euler);
 
-        C7Vector trAbs(linkDesiredConf*linkInitialConf); // still local
+        CPose trAbs(linkDesiredConf*linkInitialConf); // still local
 
         if (Link->parent.size()>0)
         {
@@ -835,15 +835,15 @@ void robot::createSensors()
             }
 
             // Find the local configuration:
-            C7Vector sensorLocal;
+            CPose sensorLocal;
             sensorLocal.X.setData(Sensor->origin_xyz);
             sensorLocal.Q=getQuaternionFromRpy(Sensor->origin_rpy);
-            C4Vector rot(0.0,0.0,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
+            CQuaternion rot(0.0,0.0,piValue); // the CoppeliaSim sensors are rotated by 180deg around the Z-axis
             sensorLocal.Q=sensorLocal.Q*rot;
 
 
             // We attach the sensor to a link:
-            C7Vector x;
+            CPose x;
             x.setIdentity();
             int parentLinkIndex=getLinkPosition(Sensor->parentLink);
             if (parentLinkIndex!=-1)
@@ -855,7 +855,7 @@ void robot::createSensors()
                         x=vJoints.at(parentJointLinkIndex)->jointBaseFrame;
                 }
             }
-            C7Vector sensorGlobal(x*sensorLocal);
+            CPose sensorGlobal(x*sensorLocal);
             if (Sensor->nSensor!=-1)
             {
                 simSetObjectPosition(Sensor->nSensor,-1,sensorGlobal.X.data);

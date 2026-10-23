@@ -22,7 +22,7 @@ public:
     double velocityLimitAngular;
     double velocityLimitLinear;
 
-    C7Vector jointBaseFrame;
+    CPose jointBaseFrame;
 
     int nJoint;
     std::string name;
